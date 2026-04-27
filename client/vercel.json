@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://quiz-maker-api.up.railway.app/api/:path*"
+      "destination": "https://quizforge-production-41b2.up.railway.app/api/:path*"
     }
   ],
   "headers": [
