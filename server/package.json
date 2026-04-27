@@ -1,0 +1,35 @@
+{
+  "name": "quizforge-server",
+  "version": "1.0.0",
+  "description": "QuizForge - Multi-tenant Quiz-as-a-Service Backend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "npx nodemon server.js",
+    "worker": "node workers/pdfWorker.js",
+    "worker:dev": "npx nodemon workers/pdfWorker.js"
+  },
+  "keywords": [
+    "quiz",
+    "saas",
+    "multi-tenant"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "bullmq": "^5.76.2",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.1",
+    "express-rate-limit": "^8.4.1",
+    "helmet": "^8.1.0",
+    "ioredis": "^5.10.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.5.0",
+    "morgan": "^1.10.1",
+    "multer": "^2.1.1",
+    "pdf-parse": "^1.1.1"
+  }
+}
