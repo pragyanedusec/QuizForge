@@ -49,8 +49,22 @@ const quizJoinLimiter = rateLimit({
 });
 
 // ── CORS ───────────────────────────────────────────────────────────────────
+const allowedOrigins = [
+  process.env.CORS_ORIGIN,          // exact override from Railway variable
+  'http://localhost:5173',           // local Vite dev server
+  'http://localhost:4173',           // local Vite preview
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow any *.vercel.app subdomain (covers all preview/prod deployments)
+    if (origin.endsWith('.vercel.app')) return callback(null, true);
+    // Allow explicitly listed origins
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 
