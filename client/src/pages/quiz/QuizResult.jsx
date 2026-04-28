@@ -7,11 +7,14 @@ export default function QuizResult() {
   const navigate = useNavigate();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showAnswers, setShowAnswers] = useState(true); // expanded by default
+  const [showAnswers, setShowAnswers] = useState(false);
 
   useEffect(() => {
     getResult(id)
-      .then(res => setResult(res.data.result))
+      .then(res => {
+        setResult(res.data.result);
+        setShowAnswers(res.data.result.showCorrectAnswers !== false);
+      })
       .catch(() => navigate('/quiz'))
       .finally(() => setLoading(false));
   }, [id, navigate]);
@@ -67,13 +70,23 @@ export default function QuizResult() {
         <button className="btn btn-primary" onClick={() => navigate('/quiz')}>
           Take Another Quiz
         </button>
-        <button className="btn btn-secondary" onClick={() => setShowAnswers(s => !s)}>
-          {showAnswers ? 'Hide Answers' : 'Review Answers'}
-        </button>
+        {result.showCorrectAnswers !== false && (
+          <button className="btn btn-secondary" onClick={() => setShowAnswers(s => !s)}>
+            {showAnswers ? 'Hide Answers' : 'Review Answers'}
+          </button>
+        )}
         <button className="btn btn-secondary" onClick={() => navigate('/leaderboard')}>
           Leaderboard
         </button>
       </div>
+
+      {result.showCorrectAnswers === false && (
+        <div className="card" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+          <p style={{ color: 'var(--text-muted)' }}>
+            Correct answers are hidden for this quiz.
+          </p>
+        </div>
+      )}
 
       {showAnswers && result.answers?.map((a, idx) => (
         <div key={idx} className="question-card" style={{

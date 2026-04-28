@@ -4,6 +4,7 @@
  */
 const jwt = require('jsonwebtoken');
 const Admin = require('../models/Admin');
+const Tenant = require('../models/Tenant');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'quizforge_dev_secret_change_in_production';
 
@@ -41,9 +42,15 @@ const requireAuth = async (req, res, next) => {
       return res.status(401).json({ success: false, error: 'Account not found or deactivated.' });
     }
 
+    const tenant = await Tenant.findOne({ tenantId: admin.tenantId, isActive: true });
+    if (!tenant) {
+      return res.status(401).json({ success: false, error: 'Tenant not found or inactive.' });
+    }
+
     req.admin = admin;
     // Override tenantId from JWT to prevent tenant spoofing
     req.tenantId = admin.tenantId;
+    req.tenant = tenant;
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

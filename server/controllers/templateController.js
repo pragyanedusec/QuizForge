@@ -54,6 +54,7 @@ exports.createTemplate = async (req, res) => {
     res.status(201).json({
       success: true,
       template: {
+        _id: template._id,
         id: template._id,
         title: template.title,
         code: template.code,

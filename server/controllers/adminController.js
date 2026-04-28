@@ -240,14 +240,51 @@ exports.getQuestions = async (req, res) => {
  */
 exports.updateQuestion = async (req, res) => {
   try {
-    const question = await Question.findOneAndUpdate(
-      { _id: req.params.id, tenantId: req.tenantId },
-      req.body,
-      { new: true, runValidators: true }
+    const allowedFields = ['question', 'options', 'correctAnswer', 'difficulty', 'category', 'tags'];
+    const updates = Object.fromEntries(
+      allowedFields
+        .filter(field => Object.prototype.hasOwnProperty.call(req.body, field))
+        .map(field => [field, req.body[field]])
     );
-    if (!question) {
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid fields provided for update' });
+    }
+
+    if (updates.options) {
+      if (!Array.isArray(updates.options) || updates.options.length !== 4) {
+        return res.status(400).json({ success: false, error: 'Exactly 4 options are required' });
+      }
+      updates.options = updates.options.map(opt => typeof opt === 'string' ? opt.trim() : opt);
+    }
+
+    if (typeof updates.question === 'string') {
+      updates.question = updates.question.trim();
+    }
+
+    if (typeof updates.category === 'string') {
+      updates.category = updates.category.trim();
+    }
+
+    if (typeof updates.correctAnswer === 'string') {
+      updates.correctAnswer = updates.correctAnswer.trim();
+    }
+
+    const existingQuestion = await Question.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!existingQuestion) {
       return res.status(404).json({ success: false, error: 'Question not found' });
     }
+
+    const finalOptions = updates.options || existingQuestion.options;
+    if (updates.correctAnswer && !finalOptions.includes(updates.correctAnswer)) {
+      return res.status(400).json({ success: false, error: 'Correct answer must match one of the provided options' });
+    }
+
+    const question = await Question.findOneAndUpdate(
+      { _id: existingQuestion._id, tenantId: req.tenantId },
+      updates,
+      { new: true, runValidators: true }
+    );
     res.json({ success: true, question });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -386,5 +423,3 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
-

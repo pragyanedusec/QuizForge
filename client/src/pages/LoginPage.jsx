@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { authLogin, authRegister } from '../services/api';
 
 export default function LoginPage() {
+  const registrationEnabled = import.meta.env.VITE_ALLOW_ADMIN_REGISTRATION === 'true';
   const [isLogin, setIsLogin] = useState(true);
   const [form, setForm] = useState({ email: '', password: '', name: '' });
   const [showPassword, setShowPassword] = useState(false);
@@ -84,11 +85,13 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
-            <button className="btn btn-ghost" onClick={() => { setIsLogin(!isLogin); setError(''); }}>
-              {isLogin ? "Don't have an account? Register" : 'Already have an account? Sign In'}
-            </button>
-          </div>
+          {registrationEnabled && (
+            <div style={{ textAlign: 'center', marginTop: '1.25rem' }}>
+              <button className="btn btn-ghost" onClick={() => { setIsLogin(!isLogin); setError(''); }}>
+                {isLogin ? "Don't have an account? Register" : 'Already have an account? Sign In'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

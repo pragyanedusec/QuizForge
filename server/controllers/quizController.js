@@ -8,7 +8,40 @@
 const Question = require('../models/Question');
 const Quiz = require('../models/Quiz');
 const Attempt = require('../models/Attempt');
+const QuizTemplate = require('../models/QuizTemplate');
 const { shuffleArray } = require('../utils/shuffle');
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildResultPayload = (attempt, showCorrectAnswers) => {
+  const source = attempt.toObject ? attempt.toObject() : attempt;
+  const answers = (source.answers || []).map((answer) => ({
+    questionId: answer.questionId,
+    selectedAnswer: answer.selectedAnswer,
+    isCorrect: answer.isCorrect,
+    question: answer.question,
+    options: answer.options,
+    ...(showCorrectAnswers ? { correctAnswer: answer.correctAnswer } : {}),
+  }));
+
+  return {
+    _id: source._id,
+    attemptId: source._id,
+    quizId: source.quizId,
+    quizCode: source.quizCode,
+    userId: source.userId,
+    userName: source.userName,
+    score: source.score,
+    totalQuestions: source.totalQuestions,
+    percentage: source.percentage,
+    timeTaken: source.timeTaken,
+    status: source.status,
+    startTime: source.startTime,
+    submissionTime: source.submissionTime,
+    showCorrectAnswers,
+    answers,
+  };
+};
 
 /**
  * Start a new quiz — creates session with server-controlled expiry
@@ -27,15 +60,81 @@ exports.startQuiz = async (req, res) => {
     } = req.body;
 
     const tenantId = req.tenantId;
+    const normalizedUserName = userName.trim();
+    let template = null;
+    let resolvedCount = Number.isFinite(parseInt(count)) ? parseInt(count) : 10;
+    let resolvedDifficulty = difficulty;
+    let resolvedCategory = category;
+    let resolvedTimePerQuestion = Number.isFinite(parseInt(timePerQuestion)) ? parseInt(timePerQuestion) : 30;
+
+    if (!normalizedUserName) {
+      return res.status(400).json({
+        success: false,
+        error: 'User name is required',
+      });
+    }
+
+    if (quizCode) {
+      template = await QuizTemplate.findOne({
+        tenantId,
+        code: quizCode.toUpperCase(),
+        isActive: true,
+      });
+
+      if (!template) {
+        return res.status(404).json({
+          success: false,
+          error: 'Quiz template not found or inactive',
+        });
+      }
+
+      const now = new Date();
+      if (template.startsAt && now < template.startsAt) {
+        return res.status(400).json({
+          success: false,
+          error: `This quiz has not started yet. It starts at ${template.startsAt.toLocaleString()}.`,
+        });
+      }
+
+      if (template.endsAt && now > template.endsAt) {
+        return res.status(400).json({
+          success: false,
+          error: 'This quiz has ended',
+        });
+      }
+
+      if (template.maxAttempts > 0) {
+        const priorAttempts = await Attempt.countDocuments({
+          tenantId,
+          quizCode: template.code,
+          userName: new RegExp(`^${escapeRegex(normalizedUserName)}$`, 'i'),
+        });
+
+        if (priorAttempts >= template.maxAttempts) {
+          return res.status(403).json({
+            success: false,
+            error: `Attempt limit reached for this quiz (${template.maxAttempts} max).`,
+          });
+        }
+      }
+
+      resolvedCount = template.questionCount;
+      resolvedDifficulty = template.difficulty;
+      resolvedCategory = template.category;
+      resolvedTimePerQuestion = template.timePerQuestion;
+    }
+
+    resolvedCount = Math.max(1, resolvedCount);
+    resolvedTimePerQuestion = Math.max(1, resolvedTimePerQuestion);
 
     // Build match filter
     const matchFilter = { tenantId };
-    if (difficulty !== 'mixed') matchFilter.difficulty = difficulty;
-    if (category && category !== 'all') matchFilter.category = category;
+    if (resolvedDifficulty !== 'mixed') matchFilter.difficulty = resolvedDifficulty;
+    if (resolvedCategory && resolvedCategory !== 'all') matchFilter.category = resolvedCategory;
 
     // Check available questions
     const available = await Question.countDocuments(matchFilter);
-    const questionCount = Math.min(parseInt(count), available);
+    const questionCount = Math.min(resolvedCount, available);
 
     if (questionCount === 0) {
       return res.status(400).json({
@@ -64,15 +163,15 @@ exports.startQuiz = async (req, res) => {
 
     // Per-question timing — total = timePerQuestion × questionCount
     const now = new Date();
-    const timePerQ = parseInt(timePerQuestion);
+    const timePerQ = resolvedTimePerQuestion;
     const totalTimeLimit = timePerQ * questionCount;
     const expiresAt = new Date(now.getTime() + totalTimeLimit * 1000);
 
     // ── Anti-cheat: expire any previous in-progress session for this user+code ──
     // Only enforced when tenant has antiCheat enabled (default: true)
-    if (quizCode && req.tenant?.settings?.antiCheat !== false) {
+    if ((template?.code || quizCode) && req.tenant?.settings?.antiCheat !== false) {
       await Quiz.updateMany(
-        { tenantId, userName, quizCode, status: 'in-progress' },
+        { tenantId, userName, quizCode: template?.code || quizCode, status: 'in-progress' },
         { $set: { status: 'expired' } }
       );
     }
@@ -86,12 +185,12 @@ exports.startQuiz = async (req, res) => {
       totalQuestions: questionCount,
       timeLimit: totalTimeLimit,
       timePerQuestion: timePerQ,
-      difficulty,
-      category: category || 'General',
+      difficulty: resolvedDifficulty,
+      category: resolvedCategory || 'General',
       status: 'in-progress',
       startedAt: now,
       expiresAt,
-      quizCode: quizCode || null,
+      quizCode: template?.code || quizCode || null,
     });
 
     // Return questions WITHOUT correct answers
@@ -179,6 +278,7 @@ exports.submitQuiz = async (req, res) => {
     const attempt = await Attempt.create({
       quizId: quiz._id,
       tenantId: req.tenantId,
+      quizCode: quiz.quizCode || null,
       userId: userId || quiz.userId,
       userName: userName || quiz.userName,
       answers: gradedAnswers,
@@ -195,17 +295,18 @@ exports.submitQuiz = async (req, res) => {
     quiz.status = isExpired ? 'expired' : 'completed';
     await quiz.save();
 
+    if (quiz.quizCode) {
+      await QuizTemplate.updateOne(
+        { tenantId: req.tenantId, code: quiz.quizCode },
+        { $inc: { totalAttempts: 1 } }
+      ).catch(() => {});
+    }
+
+    const showCorrectAnswers = req.tenant?.settings?.showCorrectAnswers !== false;
+
     res.json({
       success: true,
-      result: {
-        attemptId: attempt._id,
-        score,
-        totalQuestions: quiz.totalQuestions,
-        percentage,
-        timeTaken,
-        answers: gradedAnswers,
-        status: attempt.status,
-      },
+      result: buildResultPayload(attempt, showCorrectAnswers),
     });
   } catch (error) {
     console.error('Submit quiz error:', error);
@@ -255,7 +356,8 @@ exports.getResult = async (req, res) => {
     if (!attempt) {
       return res.status(404).json({ success: false, error: 'Result not found' });
     }
-    res.json({ success: true, result: attempt });
+    const showCorrectAnswers = req.tenant?.settings?.showCorrectAnswers !== false;
+    res.json({ success: true, result: buildResultPayload(attempt, showCorrectAnswers) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

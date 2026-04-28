@@ -1,11 +1,21 @@
 import axios from 'axios';
 
-const API_BASE = '/api';
-const TENANT_ID = 'default';
+// In production: VITE_API_URL = https://quizforge-production-41b2.up.railway.app
+// In development: falls back to /api (handled by Vite proxy or relative path)
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+const TENANT_ID = import.meta.env.VITE_TENANT_ID || 'default';
+const TENANT_API_KEY = import.meta.env.VITE_TENANT_API_KEY || (import.meta.env.DEV ? 'qf_default_key_2024' : '');
+
+const defaultHeaders = { 'x-tenant-id': TENANT_ID };
+if (TENANT_API_KEY) {
+  defaultHeaders['x-api-key'] = TENANT_API_KEY;
+}
 
 const api = axios.create({
   baseURL: API_BASE,
-  headers: { 'x-tenant-id': TENANT_ID },
+  headers: defaultHeaders,
 });
 
 // Inject JWT token from localStorage on every request

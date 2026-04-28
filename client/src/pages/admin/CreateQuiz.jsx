@@ -41,7 +41,12 @@ export default function CreateQuiz({ addToast }) {
     setCreating(true);
     try {
       const res = await createQuizTemplate(form);
-      setTemplates(prev => [{ ...res.data.template, createdAt: new Date() }, ...prev]);
+      const createdTemplate = {
+        ...res.data.template,
+        _id: res.data.template._id || res.data.template.id,
+        createdAt: new Date(),
+      };
+      setTemplates(prev => [createdTemplate, ...prev]);
       setShowForm(false);
       setForm({ title: '', questionCount: 10, timePerQuestion: 30, difficulty: 'mixed', category: 'all', maxAttempts: 1 });
       addToast?.(`Quiz created! Code: ${res.data.template.code}`, 'success');

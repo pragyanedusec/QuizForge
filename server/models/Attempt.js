@@ -11,6 +11,10 @@ const attemptSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  quizCode: {
+    type: String,
+    default: null,
+  },
   userId: {
     type: String,
     default: 'anonymous',
@@ -23,6 +27,9 @@ const attemptSchema = new mongoose.Schema({
     questionId: mongoose.Schema.Types.ObjectId,
     selectedAnswer: String,
     isCorrect: Boolean,
+    correctAnswer: String,
+    question: String,
+    options: [String],
   }],
   score: {
     type: Number,
@@ -57,6 +64,7 @@ const attemptSchema = new mongoose.Schema({
 
 attemptSchema.index({ tenantId: 1, score: -1 });
 attemptSchema.index({ tenantId: 1, userId: 1 });
+attemptSchema.index({ tenantId: 1, quizCode: 1, submissionTime: -1 });
 attemptSchema.index({ tenantId: 1, quizId: 1 });         // cascade delete
 attemptSchema.index({ tenantId: 1, submissionTime: -1 }); // recent attempts sort
 

@@ -6,7 +6,7 @@
 const Tenant = require('../models/Tenant');
 
 const DEFAULT_TENANT_ID = 'default';
-const DEFAULT_API_KEY = 'qf_default_key_2024';
+const DEFAULT_API_KEY = process.env.DEFAULT_TENANT_API_KEY || 'qf_default_key_2024';
 
 // Ensure default tenant exists
 let defaultTenantCreated = false;
@@ -37,6 +37,8 @@ const ensureDefaultTenant = async () => {
 const tenantMiddleware = async (req, res, next) => {
   await ensureDefaultTenant();
 
+  const isAdminRoute = req.baseUrl?.startsWith('/api/admin') || req.originalUrl?.startsWith('/api/admin');
+
   // Extract tenantId from header, query, or body
   const tenantId = req.headers['x-tenant-id'] 
     || req.query.tenantId 
@@ -52,7 +54,17 @@ const tenantMiddleware = async (req, res, next) => {
     });
   }
 
-  req.tenantId = tenantId;
+  if (!isAdminRoute) {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || apiKey !== tenant.apiKey) {
+      return res.status(401).json({
+        success: false,
+        error: 'Valid tenant API key is required',
+      });
+    }
+  }
+
+  req.tenantId = tenant.tenantId;
   req.tenant = tenant;
   next();
 };

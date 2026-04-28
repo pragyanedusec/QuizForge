@@ -11,6 +11,13 @@ const { generateToken } = require('../middleware/auth');
  */
 exports.register = async (req, res) => {
   try {
+    if (process.env.ALLOW_ADMIN_REGISTRATION !== 'true') {
+      return res.status(403).json({
+        success: false,
+        error: 'Admin registration is disabled. Ask an existing admin to create your account.',
+      });
+    }
+
     const { email, password, name, tenantId = 'default' } = req.body;
 
     if (!email || !password || !name) {
