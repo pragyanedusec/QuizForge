@@ -1,10 +1,57 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { joinQuizByCode, startQuiz } from '../../services/api';
 
+function OtpInput({ length = 6, value, onChange }) {
+  const inputs = useRef([]);
+
+  const handleChange = (i, val) => {
+    const char = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(-1);
+    const newCode = value.split('');
+    newCode[i] = char;
+    const result = newCode.join('');
+    onChange(result);
+    if (char && i < length - 1) inputs.current[i + 1]?.focus();
+  };
+
+  const handleKeyDown = (i, e) => {
+    if (e.key === 'Backspace' && !value[i] && i > 0) {
+      inputs.current[i - 1]?.focus();
+    }
+  };
+
+  const handlePaste = useCallback((e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, length);
+    onChange(pasted.padEnd(length, ''));
+    const focusIdx = Math.min(pasted.length, length - 1);
+    inputs.current[focusIdx]?.focus();
+  }, [length, onChange]);
+
+  return (
+    <div className="otp-container">
+      {Array.from({ length }, (_, i) => (
+        <input
+          key={i}
+          ref={el => inputs.current[i] = el}
+          className={`otp-box ${value[i] ? 'filled' : ''}`}
+          type="text"
+          inputMode="text"
+          maxLength={1}
+          value={value[i] || ''}
+          onChange={e => handleChange(i, e.target.value)}
+          onKeyDown={e => handleKeyDown(i, e)}
+          onPaste={handlePaste}
+          autoFocus={i === 0}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function StartQuiz() {
   const navigate = useNavigate();
-  const [step, setStep] = useState('code'); // 'code' → 'name' → start
+  const [step, setStep] = useState('code');
   const [code, setCode] = useState('');
   const [userName, setUserName] = useState('');
   const [quizInfo, setQuizInfo] = useState(null);
@@ -12,14 +59,14 @@ export default function StartQuiz() {
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
 
-  // Step 1: Enter quiz code
   const handleJoin = async (e) => {
-    e.preventDefault();
-    if (!code.trim()) return;
+    e?.preventDefault();
+    const trimmed = code.replace(/\s/g, '');
+    if (trimmed.length < 4) return;
     setError('');
     setLoading(true);
     try {
-      const res = await joinQuizByCode(code.trim());
+      const res = await joinQuizByCode(trimmed);
       setQuizInfo(res.data.quiz);
       setStep('name');
     } catch (err) {
@@ -28,7 +75,6 @@ export default function StartQuiz() {
     setLoading(false);
   };
 
-  // Step 2: Enter name and start
   const handleStart = async () => {
     if (!userName.trim()) {
       setError('Please enter your name');
@@ -44,13 +90,10 @@ export default function StartQuiz() {
         difficulty: quizInfo.difficulty,
         category: quizInfo.category,
         timePerQuestion: quizInfo.timePerQuestion,
-        quizCode: quizInfo.code,  // link session to template
+        quizCode: quizInfo.code,
       });
       navigate('/quiz/attempt', {
-        state: {
-          quiz: res.data.quiz,
-          userName: userName.trim(),
-        },
+        state: { quiz: res.data.quiz, userName: userName.trim() },
       });
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to start quiz');
@@ -77,22 +120,10 @@ export default function StartQuiz() {
 
       <div className="config-card card">
         {step === 'code' ? (
-          /* ── Step 1: Enter Code ── */
           <form onSubmit={handleJoin}>
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label className="form-label">Quiz Code</label>
-              <input
-                className="input"
-                placeholder="e.g. A3B7K9"
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                autoFocus
-                maxLength={6}
-                style={{
-                  textAlign: 'center', fontSize: '1.8rem', fontWeight: 800,
-                  letterSpacing: '.2em', fontFamily: 'monospace',
-                }}
-              />
+            <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+              <label className="form-label" style={{ textAlign: 'center', marginBottom: '.75rem' }}>Quiz Code</label>
+              <OtpInput length={6} value={code} onChange={setCode} />
             </div>
 
             {error && (
@@ -101,14 +132,12 @@ export default function StartQuiz() {
               </div>
             )}
 
-            <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={loading || code.length < 4}>
+            <button className="btn btn-primary btn-lg" style={{ width: '100%' }} disabled={loading || code.replace(/\s/g, '').length < 4}>
               {loading ? 'Checking...' : 'Join Quiz →'}
             </button>
           </form>
         ) : (
-          /* ── Step 2: Quiz Info + Name ── */
           <div>
-            {/* Quiz details */}
             <div style={{
               padding: '1.25rem', background: 'var(--bg-input)',
               borderRadius: 'var(--radius-sm)', marginBottom: '1.25rem',
@@ -124,7 +153,6 @@ export default function StartQuiz() {
               </div>
             </div>
 
-            {/* Name input */}
             <div className="form-group" style={{ marginBottom: '1.25rem' }}>
               <label className="form-label">Your Full Name</label>
               <input

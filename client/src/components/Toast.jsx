@@ -8,6 +8,7 @@ export default function Toast({ toasts }) {
           {t.type === 'error' && '✕'}
           {t.type === 'info' && 'ℹ'}
           {t.message}
+          <div className="toast-progress" />
         </div>
       ))}
     </div>

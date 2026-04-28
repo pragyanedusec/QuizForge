@@ -1,6 +1,26 @@
 import { useState, useEffect } from 'react';
 import { getLeaderboard } from '../../services/api';
 
+function LeaderboardSkeleton() {
+  return (
+    <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
+      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+        <div className="skeleton skeleton-heading" style={{ width: '50%', margin: '0 auto 8px' }} />
+        <div className="skeleton skeleton-text" style={{ width: '40%', margin: '0 auto' }} />
+      </div>
+      <div className="skeleton-card" style={{ padding: 0 }}>
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="skeleton-row">
+            <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0 }} />
+            <div className="skeleton skeleton-text" style={{ flex: 1, marginBottom: 0 }} />
+            <div className="skeleton" style={{ width: '48px', height: '14px' }} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Leaderboard() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,9 +32,7 @@ export default function Leaderboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <div className="loading-screen"><div className="spinner" /><p>Loading leaderboard...</p></div>;
-  }
+  if (loading) return <LeaderboardSkeleton />;
 
   return (
     <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>

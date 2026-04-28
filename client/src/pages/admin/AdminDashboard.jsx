@@ -1,5 +1,49 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAdminStats } from '../../services/api';
+
+function CountUp({ target, duration = 1000 }) {
+  const [value, setValue] = useState(0);
+  const ref = useRef();
+
+  useEffect(() => {
+    if (target === 0) { setValue(0); return; }
+    const start = performance.now();
+    const animate = (now) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setValue(Math.round(eased * target));
+      if (progress < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(ref.current);
+  }, [target, duration]);
+
+  return <>{value}</>;
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2rem' }}>
+        <div className="skeleton skeleton-heading" />
+        <div className="skeleton skeleton-text short" />
+      </div>
+      <div className="stats-grid">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={i} className="skeleton skeleton-stat" />
+        ))}
+      </div>
+      <div className="skeleton-card">
+        <div className="skeleton skeleton-heading" style={{ width: '30%' }} />
+        <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+          {Array.from({ length: 4 }, (_, i) => (
+            <div key={i} className="skeleton" style={{ width: '80px', height: '28px', borderRadius: '20px' }} />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -12,14 +56,7 @@ export default function AdminDashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner" />
-        <p>Loading dashboard...</p>
-      </div>
-    );
-  }
+  if (loading) return <DashboardSkeleton />;
 
   const diffMap = {};
   (stats?.difficultyBreakdown || []).forEach(d => { diffMap[d._id] = d.count; });
@@ -37,27 +74,27 @@ export default function AdminDashboard() {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <div className="stat-value">{stats?.totalQuestions || 0}</div>
+          <div className="stat-value"><CountUp target={stats?.totalQuestions || 0} /></div>
           <div className="stat-label">Total Questions</div>
         </div>
         <div className="stat-card success">
-          <div className="stat-value">{diffMap.easy || 0}</div>
+          <div className="stat-value"><CountUp target={diffMap.easy || 0} /></div>
           <div className="stat-label">Easy Questions</div>
         </div>
         <div className="stat-card warning">
-          <div className="stat-value">{diffMap.medium || 0}</div>
+          <div className="stat-value"><CountUp target={diffMap.medium || 0} /></div>
           <div className="stat-label">Medium Questions</div>
         </div>
         <div className="stat-card danger">
-          <div className="stat-value">{diffMap.hard || 0}</div>
+          <div className="stat-value"><CountUp target={diffMap.hard || 0} /></div>
           <div className="stat-label">Hard Questions</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{stats?.totalAttempts || 0}</div>
+          <div className="stat-value"><CountUp target={stats?.totalAttempts || 0} /></div>
           <div className="stat-label">Total Attempts</div>
         </div>
         <div className="stat-card">
-          <div className="stat-value">{stats?.categoryBreakdown?.length || 0}</div>
+          <div className="stat-value"><CountUp target={stats?.categoryBreakdown?.length || 0} /></div>
           <div className="stat-label">Categories</div>
         </div>
       </div>

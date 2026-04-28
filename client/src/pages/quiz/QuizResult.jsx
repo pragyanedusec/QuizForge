@@ -1,6 +1,27 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getResult } from '../../services/api';
+import Confetti from '../../components/Confetti';
+
+function AnimatedScore({ target, duration = 1200 }) {
+  const [display, setDisplay] = useState(0);
+  const ref = useRef();
+
+  useEffect(() => {
+    const start = performance.now();
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      setDisplay(Math.round(eased * target));
+      if (progress < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(ref.current);
+  }, [target, duration]);
+
+  return <>{display}%</>;
+}
 
 export default function QuizResult() {
   const { id } = useParams();
@@ -37,8 +58,12 @@ export default function QuizResult() {
 
   return (
     <div className="quiz-container fade-in">
+      <Confetti trigger={result.percentage >= 70} />
+
       <div className="result-hero">
-        <div className="result-score">{result.percentage}%</div>
+        <div className="result-score" style={{ animation: 'count-pop .6s ease .3s both' }}>
+          <AnimatedScore target={result.percentage} />
+        </div>
         <div className="result-label" style={{ fontSize: '1.3rem', color: gradeColor, fontWeight: 700 }}>
           {grade}
         </div>
@@ -93,7 +118,6 @@ export default function QuizResult() {
           marginBottom: '.75rem',
           borderColor: a.isCorrect ? 'rgba(34,197,94,.3)' : 'rgba(239,68,68,.3)',
         }}>
-          {/* Header */}
           <div className="question-number" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>Question {idx + 1}</span>
             {a.isCorrect ? (
@@ -103,10 +127,8 @@ export default function QuizResult() {
             )}
           </div>
 
-          {/* Question text */}
           <div className="question-text" style={{ fontSize: '1rem' }}>{a.question}</div>
 
-          {/* Options — always show, correct highlighted green, wrong answer red */}
           {a.options?.length > 0 ? (
             <div className="options-list">
               {a.options.map((opt, i) => {
@@ -132,7 +154,6 @@ export default function QuizResult() {
               })}
             </div>
           ) : (
-            /* Fallback if options not stored */
             <div style={{ marginTop: '.5rem' }}>
               {!a.isCorrect && a.selectedAnswer && (
                 <p style={{ fontSize: '.85rem', color: 'var(--danger)', marginBottom: '.4rem' }}>
@@ -145,7 +166,6 @@ export default function QuizResult() {
             </div>
           )}
 
-          {/* Green bar summary for incorrect — always visible even after options */}
           {!a.isCorrect && (
             <div style={{
               marginTop: '.75rem', padding: '.6rem 1rem',
