@@ -205,6 +205,7 @@ exports.joinByCode = async (req, res) => {
         difficulty: template.difficulty,
         category: template.category,
         maxAttempts: template.maxAttempts,
+        totalAttempts: template.totalAttempts || 0,
         tenantId: template.tenantId,
       },
     });

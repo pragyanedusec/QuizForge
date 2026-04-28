@@ -150,6 +150,8 @@ export default function StartQuiz() {
                 <span>⏱ {quizInfo.timePerQuestion}s per question</span>
                 <span>⏳ ~{totalTime} min total</span>
                 <span>🎯 {quizInfo.difficulty}</span>
+                <span>👥 {quizInfo.totalAttempts || 0} student{(quizInfo.totalAttempts || 0) !== 1 ? 's' : ''} joined</span>
+                {quizInfo.maxAttempts > 0 && <span>🔄 {quizInfo.maxAttempts} attempt{quizInfo.maxAttempts !== 1 ? 's' : ''} max</span>}
               </div>
             </div>
 
