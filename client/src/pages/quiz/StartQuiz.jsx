@@ -70,7 +70,13 @@ export default function StartQuiz() {
       setQuizInfo(res.data.quiz);
       setStep('name');
     } catch (err) {
-      setError(err.response?.data?.error || 'Invalid quiz code');
+      if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else if (!err.response) {
+        setError('Network error — please hard-refresh the page (Ctrl+Shift+R) and try again.');
+      } else {
+        setError('Invalid quiz code. Please check and try again.');
+      }
     }
     setLoading(false);
   };
