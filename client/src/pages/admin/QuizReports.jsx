@@ -11,42 +11,57 @@ function generatePDF(report) {
 <title>${quiz.title} — Report</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Segoe UI',Tahoma,Geneva,sans-serif;color:#1e293b;padding:40px;font-size:13px;line-height:1.5}
-  h1{font-size:22px;color:#0f172a;margin-bottom:4px}
-  h2{font-size:16px;color:#334155;margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}
-  h3{font-size:14px;color:#475569;margin:20px 0 8px}
-  .subtitle{color:#64748b;font-size:13px;margin-bottom:24px}
-  .meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px}
-  .meta-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;min-width:120px}
-  .meta-value{font-size:20px;font-weight:800;color:#6366f1}
-  .meta-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
-  table{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:12px}
-  th{background:#f1f5f9;color:#334155;padding:10px 12px;text-align:left;font-weight:700;border-bottom:2px solid #e2e8f0}
-  td{padding:8px 12px;border-bottom:1px solid #f1f5f9}
-  tr:hover td{background:#fafbfc}
-  .correct{color:#16a34a;font-weight:700}
-  .incorrect{color:#dc2626;font-weight:700}
-  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  body{font-family:'Segoe UI',Tahoma,Geneva,sans-serif;color:#1e293b;padding:24px 32px;font-size:12px;line-height:1.45}
+  h1{font-size:20px;color:#0f172a;margin-bottom:2px}
+  h2{font-size:14px;color:#334155;margin:18px 0 8px;padding-bottom:4px;border-bottom:2px solid #e2e8f0}
+  .subtitle{color:#64748b;font-size:12px;margin-bottom:16px}
+  .meta{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px}
+  .meta-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:8px 12px;min-width:100px}
+  .meta-value{font-size:18px;font-weight:800;color:#6366f1}
+  .meta-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;margin:4px 0 12px;font-size:11px}
+  th{background:#f1f5f9;color:#334155;padding:6px 8px;text-align:left;font-weight:700;border-bottom:2px solid #e2e8f0}
+  td{padding:5px 8px;border-bottom:1px solid #f1f5f9}
+  .badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:10px;font-weight:600}
   .badge-pass{background:#dcfce7;color:#166534}
   .badge-fail{background:#fee2e2;color:#991b1b}
-  .accuracy-bar{width:60px;height:8px;background:#e2e8f0;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px}
-  .accuracy-fill{height:100%;border-radius:4px;background:#6366f1}
-  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center}
-  .student-section{page-break-inside:avoid;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;padding:16px}
-  .student-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-  @media print{body{padding:20px}h2{break-before:auto}.student-section{break-inside:avoid}}
+  .badge-gold{background:#fef3c7;color:#92400e}
+  .badge-silver{background:#f1f5f9;color:#475569}
+  .badge-bronze{background:#fed7aa;color:#9a3412}
+  .accuracy-bar{width:50px;height:6px;background:#e2e8f0;border-radius:3px;display:inline-block;vertical-align:middle;margin-right:4px}
+  .accuracy-fill{height:100%;border-radius:3px}
+  .footer{margin-top:16px;padding-top:8px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:10px;text-align:center}
+  @media print{body{padding:16px 20px}@page{margin:10mm}}
 </style></head><body>
 <h1>📊 ${quiz.title}</h1>
-<p class="subtitle">Quiz Code: <strong>${quiz.code}</strong> &nbsp;|&nbsp; ${quiz.questionCount} questions &nbsp;|&nbsp; ${quiz.timePerQuestion}s per question &nbsp;|&nbsp; ${quiz.difficulty} difficulty</p>
+<p class="subtitle">Quiz Code: <strong>${quiz.code}</strong> | ${quiz.questionCount} questions | ${quiz.timePerQuestion}s/question | ${quiz.difficulty}</p>
 
 <h2>Summary</h2>
 <div class="meta">
   <div class="meta-item"><div class="meta-value">${summary.totalStudents}</div><div class="meta-label">Total Students</div></div>
   <div class="meta-item"><div class="meta-value">${summary.avgScore}%</div><div class="meta-label">Average Score</div></div>
-  <div class="meta-item"><div class="meta-value">${summary.highestScore}%</div><div class="meta-label">Highest Score</div></div>
-  <div class="meta-item"><div class="meta-value">${summary.lowestScore}%</div><div class="meta-label">Lowest Score</div></div>
-  <div class="meta-item"><div class="meta-value">${summary.passRate}%</div><div class="meta-label">Pass Rate (≥40%)</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.highestScore}%</div><div class="meta-label">Highest</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.lowestScore}%</div><div class="meta-label">Lowest</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.passRate}%</div><div class="meta-label">Pass Rate</div></div>
 </div>
+
+<h2>🏆 Leaderboard</h2>
+<table>
+  <thead><tr><th>Rank</th><th>Student Name</th><th>Score</th><th>Percentage</th><th>Time Taken</th></tr></thead>
+  <tbody>
+  ${[...students].sort((a, b) => b.percentage - a.percentage || a.timeTaken - b.timeTaken).map((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}`;
+    const badgeCls = i === 0 ? 'badge-gold' : i === 1 ? 'badge-silver' : i === 2 ? 'badge-bronze' : '';
+    return `<tr>
+    <td><strong>${medal}</strong></td>
+    <td><strong>${s.userName}</strong></td>
+    <td>${s.score}/${s.totalQuestions}</td>
+    <td><span class="badge ${s.percentage >= 40 ? 'badge-pass' : 'badge-fail'}">${s.percentage}%</span></td>
+    <td>${Math.floor(s.timeTaken / 60)}m ${s.timeTaken % 60}s</td>
+  </tr>`;
+  }).join('')}
+  </tbody>
+</table>
 
 <h2>Student Results</h2>
 <table>
@@ -78,7 +93,7 @@ function generatePDF(report) {
 </table>
 
 <div class="footer">
-  Generated by QuizForge on ${new Date().toLocaleString()} &nbsp;|&nbsp; Quiz Code: ${quiz.code}
+  Generated by QuizForge on ${new Date().toLocaleString()} | Quiz Code: ${quiz.code}
 </div>
 </body></html>`;
 
