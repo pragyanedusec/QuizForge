@@ -6,6 +6,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UploadPDF from './pages/admin/UploadPDF';
 import ManageQuestions from './pages/admin/ManageQuestions';
 import CreateQuiz from './pages/admin/CreateQuiz';
+import QuizReports from './pages/admin/QuizReports';
 import StartQuiz from './pages/quiz/StartQuiz';
 import QuizAttempt from './pages/quiz/QuizAttempt';
 import QuizResult from './pages/quiz/QuizResult';
@@ -55,6 +56,9 @@ function AppContent() {
           </NavLink>
           <NavLink to="/admin/quizzes" className={({ isActive }) => isActive ? 'active' : ''}>
             Create Quiz
+          </NavLink>
+          <NavLink to="/admin/reports" className={({ isActive }) => isActive ? 'active' : ''}>
+            Reports
           </NavLink>
         </>
       )}
@@ -114,6 +118,7 @@ function AppContent() {
           <Route path="/admin/upload" element={<ProtectedRoute><UploadPDF addToast={addToast} /></ProtectedRoute>} />
           <Route path="/admin/questions" element={<ProtectedRoute><ManageQuestions addToast={addToast} /></ProtectedRoute>} />
           <Route path="/admin/quizzes" element={<ProtectedRoute><CreateQuiz addToast={addToast} /></ProtectedRoute>} />
+          <Route path="/admin/reports" element={<ProtectedRoute><QuizReports addToast={addToast} /></ProtectedRoute>} />
           <Route path="/quiz" element={<StartQuiz />} />
           <Route path="/quiz/attempt" element={<QuizAttempt addToast={addToast} />} />
           <Route path="/quiz/result/:id" element={<QuizResult />} />

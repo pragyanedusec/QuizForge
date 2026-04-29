@@ -1,0 +1,405 @@
+import { useState, useEffect, useRef } from 'react';
+import { listQuizReports, getQuizReport } from '../../services/api';
+
+/* ── tiny PDF builder (no dependencies) ── */
+function generatePDF(report) {
+  const { quiz, summary, students, questionAnalysis } = report;
+
+  // Build HTML content for PDF
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>${quiz.title} — Report</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',Tahoma,Geneva,sans-serif;color:#1e293b;padding:40px;font-size:13px;line-height:1.5}
+  h1{font-size:22px;color:#0f172a;margin-bottom:4px}
+  h2{font-size:16px;color:#334155;margin:28px 0 12px;padding-bottom:6px;border-bottom:2px solid #e2e8f0}
+  h3{font-size:14px;color:#475569;margin:20px 0 8px}
+  .subtitle{color:#64748b;font-size:13px;margin-bottom:24px}
+  .meta{display:flex;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+  .meta-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;min-width:120px}
+  .meta-value{font-size:20px;font-weight:800;color:#6366f1}
+  .meta-label{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.04em}
+  table{width:100%;border-collapse:collapse;margin:8px 0 20px;font-size:12px}
+  th{background:#f1f5f9;color:#334155;padding:10px 12px;text-align:left;font-weight:700;border-bottom:2px solid #e2e8f0}
+  td{padding:8px 12px;border-bottom:1px solid #f1f5f9}
+  tr:hover td{background:#fafbfc}
+  .correct{color:#16a34a;font-weight:700}
+  .incorrect{color:#dc2626;font-weight:700}
+  .badge{display:inline-block;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+  .badge-pass{background:#dcfce7;color:#166534}
+  .badge-fail{background:#fee2e2;color:#991b1b}
+  .accuracy-bar{width:60px;height:8px;background:#e2e8f0;border-radius:4px;display:inline-block;vertical-align:middle;margin-right:6px}
+  .accuracy-fill{height:100%;border-radius:4px;background:#6366f1}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid #e2e8f0;color:#94a3b8;font-size:11px;text-align:center}
+  .student-section{page-break-inside:avoid;margin-bottom:20px;border:1px solid #e2e8f0;border-radius:8px;padding:16px}
+  .student-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+  @media print{body{padding:20px}h2{break-before:auto}.student-section{break-inside:avoid}}
+</style></head><body>
+<h1>📊 ${quiz.title}</h1>
+<p class="subtitle">Quiz Code: <strong>${quiz.code}</strong> &nbsp;|&nbsp; ${quiz.questionCount} questions &nbsp;|&nbsp; ${quiz.timePerQuestion}s per question &nbsp;|&nbsp; ${quiz.difficulty} difficulty</p>
+
+<h2>Summary</h2>
+<div class="meta">
+  <div class="meta-item"><div class="meta-value">${summary.totalStudents}</div><div class="meta-label">Total Students</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.avgScore}%</div><div class="meta-label">Average Score</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.highestScore}%</div><div class="meta-label">Highest Score</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.lowestScore}%</div><div class="meta-label">Lowest Score</div></div>
+  <div class="meta-item"><div class="meta-value">${summary.passRate}%</div><div class="meta-label">Pass Rate (≥40%)</div></div>
+</div>
+
+<h2>Student Results</h2>
+<table>
+  <thead><tr><th>#</th><th>Student Name</th><th>Score</th><th>Percentage</th><th>Time Taken</th><th>Status</th><th>Submitted</th></tr></thead>
+  <tbody>
+  ${students.map((s, i) => `<tr>
+    <td>${i + 1}</td>
+    <td><strong>${s.userName}</strong></td>
+    <td>${s.score}/${s.totalQuestions}</td>
+    <td><span class="badge ${s.percentage >= 40 ? 'badge-pass' : 'badge-fail'}">${s.percentage}%</span></td>
+    <td>${Math.floor(s.timeTaken / 60)}m ${s.timeTaken % 60}s</td>
+    <td>${s.status}</td>
+    <td>${new Date(s.submissionTime).toLocaleString()}</td>
+  </tr>`).join('')}
+  </tbody>
+</table>
+
+<h2>Question Analysis</h2>
+<table>
+  <thead><tr><th>#</th><th>Question</th><th>Correct Answer</th><th>Accuracy</th></tr></thead>
+  <tbody>
+  ${questionAnalysis.map((q, i) => `<tr>
+    <td>${i + 1}</td>
+    <td>${q.question || 'N/A'}</td>
+    <td>${q.correctAnswer || 'N/A'}</td>
+    <td><span class="accuracy-bar"><span class="accuracy-fill" style="width:${q.accuracy}%;background:${q.accuracy >= 70 ? '#16a34a' : q.accuracy >= 40 ? '#f59e0b' : '#dc2626'}"></span></span>${q.accuracy}%</td>
+  </tr>`).join('')}
+  </tbody>
+</table>
+
+${students.map((s, si) => `
+<h2>Detail: ${s.userName} (${s.percentage}%)</h2>
+<div class="student-section">
+  <div class="student-header">
+    <div><strong>${s.userName}</strong> — Score: ${s.score}/${s.totalQuestions} (${s.percentage}%)</div>
+    <div>Time: ${Math.floor(s.timeTaken / 60)}m ${s.timeTaken % 60}s</div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Question</th><th>Student's Answer</th><th>Correct Answer</th><th>Result</th></tr></thead>
+    <tbody>
+    ${(s.answers || []).map((a, qi) => `<tr>
+      <td>${qi + 1}</td>
+      <td>${a.question || 'N/A'}</td>
+      <td>${a.selectedAnswer || '—'}</td>
+      <td>${a.correctAnswer || 'N/A'}</td>
+      <td class="${a.isCorrect ? 'correct' : 'incorrect'}">${a.isCorrect ? '✓ Correct' : '✗ Wrong'}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table>
+</div>`).join('')}
+
+<div class="footer">
+  Generated by QuizForge on ${new Date().toLocaleString()} &nbsp;|&nbsp; Quiz Code: ${quiz.code}
+</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const printWindow = window.open(url, '_blank');
+  printWindow.onload = () => {
+    printWindow.print();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  };
+}
+
+/* ── Skeleton ── */
+function ReportsSkeleton() {
+  return (
+    <div className="fade-in">
+      <div className="skeleton skeleton-heading" style={{ width: '30%' }} />
+      <div className="skeleton skeleton-text" style={{ width: '50%', marginBottom: '2rem' }} />
+      {Array.from({ length: 4 }, (_, i) => (
+        <div key={i} className="skeleton-card" style={{ height: '90px', marginBottom: '.75rem' }} />
+      ))}
+    </div>
+  );
+}
+
+/* ── Main Component ── */
+export default function QuizReports({ addToast }) {
+  const [quizzes, setQuizzes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  const [report, setReport] = useState(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [expandedStudent, setExpandedStudent] = useState(null);
+
+  useEffect(() => {
+    listQuizReports()
+      .then(res => setQuizzes(res.data.quizzes))
+      .catch(() => addToast?.('Failed to load reports', 'error'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const loadReport = async (code) => {
+    if (selectedQuiz === code && report) {
+      setSelectedQuiz(null);
+      setReport(null);
+      return;
+    }
+    setSelectedQuiz(code);
+    setReportLoading(true);
+    try {
+      const res = await getQuizReport(code);
+      setReport(res.data.report);
+    } catch {
+      addToast?.('Failed to load report', 'error');
+      setSelectedQuiz(null);
+    }
+    setReportLoading(false);
+  };
+
+  if (loading) return <ReportsSkeleton />;
+
+  return (
+    <div className="fade-in">
+      <div style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-.02em' }}>
+          📊 Quiz Reports
+        </h1>
+        <p style={{ color: 'var(--text-muted)', marginTop: '.25rem' }}>
+          View detailed student performance reports for each quiz
+        </p>
+      </div>
+
+      {quizzes.length === 0 ? (
+        <div className="empty-state">
+          <div className="icon">📋</div>
+          <p>No quizzes created yet. Create a quiz template first!</p>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '.75rem' }}>
+          {quizzes.map(q => (
+            <div key={q._id}>
+              {/* Quiz summary card */}
+              <div
+                className="card"
+                style={{ cursor: 'pointer', transition: 'all .2s ease', borderColor: selectedQuiz === q.code ? 'var(--accent)' : undefined }}
+                onClick={() => loadReport(q.code)}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '.75rem' }}>
+                  <div style={{ flex: 1, minWidth: '200px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem' }}>
+                      <h3 style={{ fontWeight: 700, fontSize: '1.05rem' }}>{q.title}</h3>
+                      <span className="badge badge-info" style={{ fontFamily: 'monospace' }}>{q.code}</span>
+                      {!q.isActive && <span className="badge badge-hard">Inactive</span>}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', fontSize: '.8rem', color: 'var(--text-muted)' }}>
+                      <span>📝 {q.questionCount}Q</span>
+                      <span>⏱ {q.timePerQuestion}s</span>
+                      <span>🎯 {q.difficulty}</span>
+                      <span>📅 {new Date(q.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>{q.totalStudents}</div>
+                      <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Students</div>
+                    </div>
+                    {q.totalStudents > 0 && (
+                      <>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>{q.avgScore}%</div>
+                          <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Avg Score</div>
+                        </div>
+                        <div style={{ textAlign: 'center' }}>
+                          <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--warning)' }}>{q.highestScore}%</div>
+                          <div style={{ fontSize: '.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Highest</div>
+                        </div>
+                      </>
+                    )}
+                    <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)', transition: 'transform .2s', transform: selectedQuiz === q.code ? 'rotate(180deg)' : '' }}>
+                      ▼
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expanded report detail */}
+              {selectedQuiz === q.code && (
+                <div className="slide-up" style={{ marginTop: '.5rem' }}>
+                  {reportLoading ? (
+                    <div className="card" style={{ textAlign: 'center', padding: '2rem' }}>
+                      <div className="spinner" />
+                      <p style={{ color: 'var(--text-muted)', marginTop: '.75rem' }}>Loading report...</p>
+                    </div>
+                  ) : report ? (
+                    <div className="card" style={{ borderColor: 'var(--accent)', borderWidth: '1px' }}>
+                      {/* Action bar */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '.5rem' }}>
+                        <h3 style={{ fontWeight: 700 }}>Detailed Report — {report.quiz.title}</h3>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          onClick={(e) => { e.stopPropagation(); generatePDF(report); }}
+                        >
+                          📥 Download PDF
+                        </button>
+                      </div>
+
+                      {/* Summary stats */}
+                      <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+                        <div className="stat-card">
+                          <div className="stat-value">{report.summary.totalStudents}</div>
+                          <div className="stat-label">Students</div>
+                        </div>
+                        <div className="stat-card success">
+                          <div className="stat-value">{report.summary.avgScore}%</div>
+                          <div className="stat-label">Average</div>
+                        </div>
+                        <div className="stat-card">
+                          <div className="stat-value">{report.summary.highestScore}%</div>
+                          <div className="stat-label">Highest</div>
+                        </div>
+                        <div className="stat-card danger">
+                          <div className="stat-value">{report.summary.lowestScore}%</div>
+                          <div className="stat-label">Lowest</div>
+                        </div>
+                        <div className="stat-card warning">
+                          <div className="stat-value">{report.summary.passRate}%</div>
+                          <div className="stat-label">Pass Rate</div>
+                        </div>
+                      </div>
+
+                      {/* Question-level analysis */}
+                      {report.questionAnalysis?.length > 0 && (
+                        <div style={{ marginBottom: '1.5rem' }}>
+                          <h4 style={{ fontWeight: 700, marginBottom: '.75rem', color: 'var(--text-secondary)' }}>
+                            📋 Question Analysis
+                          </h4>
+                          <div className="table-wrapper">
+                            <table className="table">
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>Question</th>
+                                  <th>Correct Answer</th>
+                                  <th>Accuracy</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {report.questionAnalysis.map((q, i) => (
+                                  <tr key={i}>
+                                    <td>{i + 1}</td>
+                                    <td style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{q.question || 'N/A'}</td>
+                                    <td style={{ fontWeight: 600, color: 'var(--success)' }}>{q.correctAnswer}</td>
+                                    <td>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                                        <div style={{ width: '60px', height: '6px', background: 'var(--border)', borderRadius: '3px', overflow: 'hidden' }}>
+                                          <div style={{
+                                            height: '100%', borderRadius: '3px', width: `${q.accuracy}%`,
+                                            background: q.accuracy >= 70 ? 'var(--success)' : q.accuracy >= 40 ? 'var(--warning)' : 'var(--danger)',
+                                          }} />
+                                        </div>
+                                        <span style={{ fontSize: '.8rem', fontWeight: 600, color: q.accuracy >= 70 ? 'var(--success)' : q.accuracy >= 40 ? 'var(--warning)' : 'var(--danger)' }}>
+                                          {q.accuracy}%
+                                        </span>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Student results */}
+                      <h4 style={{ fontWeight: 700, marginBottom: '.75rem', color: 'var(--text-secondary)' }}>
+                        👥 Student Results ({report.students.length})
+                      </h4>
+
+                      {report.students.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>
+                          No attempts yet for this quiz.
+                        </p>
+                      ) : (
+                        report.students.map((s, si) => (
+                          <div key={s._id} style={{
+                            background: 'rgba(15,20,35,.5)',
+                            border: '1px solid var(--border)',
+                            borderRadius: 'var(--radius-md)',
+                            marginBottom: '.5rem',
+                            overflow: 'hidden',
+                          }}>
+                            {/* Student row */}
+                            <div
+                              style={{
+                                display: 'flex', alignItems: 'center', gap: '.75rem', padding: '.85rem 1rem',
+                                cursor: 'pointer', flexWrap: 'wrap',
+                              }}
+                              onClick={(e) => { e.stopPropagation(); setExpandedStudent(expandedStudent === s._id ? null : s._id); }}
+                            >
+                              <span style={{ fontWeight: 800, fontSize: '.85rem', color: 'var(--text-muted)', minWidth: '28px' }}>
+                                {si + 1}.
+                              </span>
+                              <span style={{ fontWeight: 600, flex: 1, minWidth: '120px' }}>{s.userName}</span>
+                              <span style={{ fontSize: '.85rem' }}>{s.score}/{s.totalQuestions}</span>
+                              <span className={`badge ${s.percentage >= 70 ? 'badge-easy' : s.percentage >= 40 ? 'badge-medium' : 'badge-hard'}`}>
+                                {s.percentage}%
+                              </span>
+                              <span style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
+                                {Math.floor(s.timeTaken / 60)}m {s.timeTaken % 60}s
+                              </span>
+                              <span style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
+                                {new Date(s.submissionTime).toLocaleString()}
+                              </span>
+                              <span style={{ transition: 'transform .2s', transform: expandedStudent === s._id ? 'rotate(180deg)' : '' }}>▼</span>
+                            </div>
+
+                            {/* Expanded answers */}
+                            {expandedStudent === s._id && s.answers?.length > 0 && (
+                              <div className="slide-up" style={{ padding: '0 1rem 1rem', borderTop: '1px solid var(--border)' }}>
+                                <table className="table" style={{ marginTop: '.5rem' }}>
+                                  <thead>
+                                    <tr>
+                                      <th>#</th>
+                                      <th>Question</th>
+                                      <th>Student's Answer</th>
+                                      <th>Correct Answer</th>
+                                      <th>Result</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {s.answers.map((a, qi) => (
+                                      <tr key={qi}>
+                                        <td>{qi + 1}</td>
+                                        <td style={{ maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.question || 'N/A'}</td>
+                                        <td>{a.selectedAnswer || '—'}</td>
+                                        <td style={{ color: 'var(--success)', fontWeight: 600 }}>{a.correctAnswer}</td>
+                                        <td>
+                                          {a.isCorrect
+                                            ? <span style={{ color: 'var(--success)', fontWeight: 700 }}>✓ Correct</span>
+                                            : <span style={{ color: 'var(--danger)', fontWeight: 700 }}>✗ Wrong</span>
+                                          }
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -86,4 +86,8 @@ export const toggleQuizTemplate = (id) => api.patch(`/admin/quiz-templates/${id}
 export const deleteQuizTemplate = (id, mode = 'quiz-only') =>
   api.delete(`/admin/quiz-templates/${id}?mode=${mode}`);
 
+// Quiz Reports (Admin)
+export const listQuizReports = () => api.get('/admin/reports/quizzes');
+export const getQuizReport = (code) => api.get(`/admin/reports/quizzes/${code}`);
+
 export default api;

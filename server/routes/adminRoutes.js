@@ -51,4 +51,9 @@ router.post('/quiz-templates', templateController.createTemplate);
 router.patch('/quiz-templates/:id/toggle', templateController.toggleTemplate);
 router.delete('/quiz-templates/:id', templateController.deleteTemplate);
 
+// Quiz Reports
+const reportController = require('../controllers/reportController');
+router.get('/reports/quizzes', reportController.listQuizReports);
+router.get('/reports/quizzes/:code', reportController.getQuizReport);
+
 module.exports = router;
