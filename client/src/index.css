@@ -328,16 +328,28 @@ img{max-width:100%;display:block}
   .config-grid{grid-template-columns:1fr}
 
   /* Start hero */
-  .start-hero{padding:2.5rem 1rem}
-  .start-hero h1{font-size:2rem}
-  .start-hero p{font-size:.95rem;margin-bottom:1.75rem}
+  .start-hero{padding:2rem .75rem}
+  .start-hero h1{font-size:1.9rem}
+  .start-hero p{font-size:.9rem;margin-bottom:1.5rem}
+  .config-card{margin:0 auto;width:100%}
+
+  /* OTP boxes — scale down to fit 375px */
+  .otp-container{gap:.4rem}
+  .otp-box{width:44px;height:54px;font-size:1.35rem;border-radius:var(--radius-sm)}
+
+  /* Quiz attempt top bar — stack timer below main row */
+  .quiz-top-bar{flex-wrap:wrap;gap:.4rem;padding:.6rem 1rem}
+  .quiz-top-bar .quiz-top-center{order:3;width:100%;justify-content:center;padding-top:.25rem;border-top:1px solid var(--border)}
 
   /* Quiz */
-  .quiz-container{padding:1rem}
+  .quiz-container{padding:.75rem}
   .question-card{padding:1.25rem}
   .question-text{font-size:1rem}
   .option-btn{padding:.85rem 1rem;font-size:.9rem}
   .quiz-nav .btn{font-size:.8rem;padding:.55rem .9rem}
+
+  /* Question nav numbers — scrollable strip */
+  .question-nav-grid{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:center}
 
   /* Result */
   .result-score{font-size:3rem}
@@ -351,35 +363,58 @@ img{max-width:100%;display:block}
   .toast-container{left:1rem;right:1rem;top:auto;bottom:1rem}
   .toast{animation:slide-up .3s ease;min-width:0;max-width:100%}
 
-  /* Tables */
+  /* Tables — horizontal scroll */
   .table th,.table td{padding:.65rem .75rem;font-size:.8rem}
+  .table-wrapper{-webkit-overflow-scrolling:touch}
 
   /* Upload zone */
   .upload-zone{padding:2rem 1rem}
 
   /* Leaderboard */
-  .leaderboard-item{padding:.85rem 1rem;gap:.75rem}
+  .leaderboard-item{padding:.75rem;gap:.5rem;flex-wrap:wrap}
+  .leaderboard-name{min-width:80px}
+
+  /* Admin quick actions */
+  .quick-actions{flex-wrap:wrap;gap:.5rem}
+  .quick-actions button{flex:1 1 calc(50% - .5rem);min-width:120px;justify-content:center}
+
+  /* Charts grid — full width on mobile */
+  .charts-grid{grid-template-columns:1fr !important}
+
+  /* Settings toggles */
+  .settings-toggle-row{flex-direction:column;align-items:flex-start;gap:.75rem}
+  .settings-toggle-row .toggle-switch{align-self:flex-end}
+
+  /* Admin page headers */
+  .admin-page-header{flex-direction:column;align-items:flex-start}
+  .admin-page-header .btn-group{align-self:stretch;justify-content:flex-end}
+
+  /* Report cards */
+  .report-card-stats{flex-direction:column;align-items:flex-start;gap:.5rem}
 }
 
 /* ── Small Phone (≤ 480px) ── */
 @media(max-width:480px){
   /* Navbar — hide brand text, keep logo */
   .navbar-brand span{display:none}
-  .navbar-nav a,.navbar-nav button{padding:.45rem .55rem;font-size:.75rem}
 
   /* Stats — single column */
   .stats-grid{grid-template-columns:1fr}
 
+  /* OTP — tighter */
+  .otp-container{gap:.3rem}
+  .otp-box{width:40px;height:50px;font-size:1.2rem}
+
   /* Headings */
-  .start-hero h1{font-size:1.75rem}
+  .start-hero h1{font-size:1.65rem}
   .result-score{font-size:2.5rem}
   .result-details{grid-template-columns:1fr 1fr}
 
-  /* Quiz nav — full-width buttons */
+  /* Quiz nav — row, equal width */
   .quiz-nav{flex-direction:row;gap:.5rem}
   .quiz-nav .btn{max-width:none;font-size:.8rem;padding:.6rem .75rem}
 
-  /* Question nav grid numbers */
+  /* Question card */
   .question-card{padding:1rem}
 
   /* Config card */
@@ -388,17 +423,28 @@ img{max-width:100%;display:block}
   /* Btn sizes */
   .btn-lg{padding:.75rem 1.25rem;font-size:.9rem}
 
-  /* Modal full-screen on tiny screens */
+  /* Modal bottom-sheet on small screens */
   .modal-overlay{align-items:flex-end;padding:0}
   .modal{border-bottom-left-radius:0;border-bottom-right-radius:0;max-height:92vh;border-radius:var(--radius-xl) var(--radius-xl) 0 0}
+
+  /* Admin headers become column */
+  .admin-page-header{gap:.75rem}
+
+  /* Leaderboard — hide time column */
+  .leaderboard-time{display:none}
+
+  /* Quick actions — 2 per row */
+  .quick-actions button{flex:1 1 calc(50% - .25rem);font-size:.78rem;padding:.5rem .75rem}
 }
 
 /* ── Ultra-small (≤ 360px) ── */
 @media(max-width:360px){
-  .start-hero h1{font-size:1.5rem}
-  .navbar-nav a,.navbar-nav button{padding:.4rem .45rem;font-size:.7rem}
+  .start-hero h1{font-size:1.4rem}
+  .otp-box{width:36px;height:46px;font-size:1.1rem}
+  .otp-container{gap:.25rem}
   .option-btn{gap:.6rem;padding:.75rem .85rem}
   .option-marker{width:24px;height:24px;font-size:.7rem}
+  .main-content{padding:.75rem}
 }
 
 /* ── Large Screens (≥ 1440px) ── */
@@ -445,7 +491,7 @@ img{max-width:100%;display:block}
 .skeleton-row{display:flex;gap:1rem;align-items:center;padding:1rem;border-bottom:1px solid rgba(42,48,80,.3)}
 
 /* ===== P1: OTP-style Code Input ===== */
-.otp-container{display:flex;gap:.65rem;justify-content:center}
+.otp-container{display:flex;gap:.55rem;justify-content:center}
 .otp-box{width:52px;height:64px;text-align:center;font-size:1.6rem;font-weight:800;font-family:monospace;letter-spacing:0;background:var(--bg-input);border:2px solid var(--border);border-radius:var(--radius-md);color:var(--text-primary);outline:none;transition:all .2s ease;caret-color:var(--accent)}
 .otp-box:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);transform:translateY(-2px)}
 .otp-box.filled{border-color:var(--accent);background:rgba(99,102,241,.06)}

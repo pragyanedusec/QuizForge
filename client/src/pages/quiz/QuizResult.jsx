@@ -98,7 +98,7 @@ export default function QuizResult() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap', padding: '0 .5rem' }}>
         <button className="btn btn-primary" onClick={() => navigate('/quiz')}>
           Take Another Quiz
         </button>

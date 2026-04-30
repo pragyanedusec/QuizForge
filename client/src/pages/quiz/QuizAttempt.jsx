@@ -162,7 +162,7 @@ export default function QuizAttempt({ addToast }) {
       )}
 
       {/* Fixed top bar */}
-      <div style={{
+      <div className="quiz-top-bar" style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         background: 'rgba(17,24,39,.95)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid var(--border)', padding: '.75rem 2rem',
@@ -177,7 +177,7 @@ export default function QuizAttempt({ addToast }) {
         </div>
 
         {/* Per-question timer */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+        <div className="quiz-top-center" style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
           <div style={{
             position: 'relative', width: '44px', height: '44px',
           }}>

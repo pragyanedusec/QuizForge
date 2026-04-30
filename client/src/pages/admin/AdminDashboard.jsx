@@ -150,7 +150,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
+      <div className="quick-actions" style={{ display: 'flex', gap: '.75rem', flexWrap: 'wrap', marginBottom: '2rem' }}>
         {[
           { icon: '📄', label: 'Upload PDF', to: '/admin/upload', color: 'var(--accent)' },
           { icon: '❓', label: 'Questions', to: '/admin/questions', color: 'var(--success)' },
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
 
       {/* Charts Row */}
       {(diffChartData.length > 0 || catChartData.length > 0) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+        <div className="charts-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
 
           {/* Difficulty breakdown */}
           {diffChartData.length > 0 && (

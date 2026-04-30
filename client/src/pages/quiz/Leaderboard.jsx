@@ -137,7 +137,7 @@ export default function Leaderboard() {
                 {e.score}/{e.totalQuestions}
               </div>
               <div className="leaderboard-score">{e.percentage}%</div>
-              <div style={{ fontSize: '.75rem', color: 'var(--text-muted)', minWidth: '60px', textAlign: 'right' }}>
+              <div className="leaderboard-time" style={{ fontSize: '.75rem', color: 'var(--text-muted)', minWidth: '60px', textAlign: 'right' }}>
                 {Math.floor(e.timeTaken / 60)}:{String(e.timeTaken % 60).padStart(2, '0')}
               </div>
             </div>

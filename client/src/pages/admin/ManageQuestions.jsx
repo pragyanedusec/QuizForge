@@ -240,14 +240,14 @@ export default function ManageQuestions({ addToast }) {
         />
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+      <div className="admin-page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Manage Questions</h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '.25rem' }}>
             {total} question{total !== 1 ? 's' : ''} in database
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+        <div className="btn-group" style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
           <button className="btn btn-primary btn-sm" onClick={() => setShowAddForm(s => !s)}>
             {showAddForm ? '✕ Cancel' : '➕ Add Question'}
           </button>

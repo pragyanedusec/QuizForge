@@ -3,7 +3,7 @@ import { getTenantSettings, updateTenantSettings } from '../../services/api';
 
 function Toggle({ label, description, checked, onChange }) {
   return (
-    <div style={{
+    <div className="settings-toggle-row" style={{
       display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       padding: '1rem 0', borderBottom: '1px solid var(--border)',
     }}>
@@ -12,6 +12,7 @@ function Toggle({ label, description, checked, onChange }) {
         {description && <div style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>{description}</div>}
       </div>
       <button
+        className="toggle-switch"
         onClick={() => onChange(!checked)}
         style={{
           width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
