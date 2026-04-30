@@ -1,4 +1,24 @@
 require('dotenv').config();
+
+// ── Startup validation ─────────────────────────────────────────────────────
+const REQUIRED_VARS = ['MONGODB_URI'];
+const WARN_VARS = [
+  { key: 'JWT_SECRET', defaultVal: 'quizforge_dev_secret_change_in_production', msg: 'Using default JWT_SECRET — change this in production!' },
+  { key: 'DEFAULT_TENANT_API_KEY', defaultVal: 'qf_default_key_2024', msg: 'Using default API key — set DEFAULT_TENANT_API_KEY in production!' },
+];
+
+const missingVars = REQUIRED_VARS.filter(v => !process.env[v]);
+if (missingVars.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingVars.join(', ')}`);
+  console.error('   Please set these in your .env file and restart the server.');
+  process.exit(1);
+}
+WARN_VARS.forEach(({ key, defaultVal, msg }) => {
+  if (!process.env[key] || process.env[key] === defaultVal) {
+    console.warn(`⚠️  [ENV WARNING] ${msg}`);
+  }
+});
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -12,6 +32,7 @@ const tenantMiddleware = require('./middleware/tenant');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');

@@ -12,7 +12,7 @@ function AnimatedScore({ target, duration = 1200 }) {
     const animate = (now) => {
       const elapsed = now - start;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+      const eased = 1 - Math.pow(1 - progress, 3);
       setDisplay(Math.round(eased * target));
       if (progress < 1) ref.current = requestAnimationFrame(animate);
     };
@@ -29,6 +29,7 @@ export default function QuizResult() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAnswers, setShowAnswers] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   useEffect(() => {
     getResult(id)
@@ -39,6 +40,12 @@ export default function QuizResult() {
       .catch(() => navigate('/quiz'))
       .finally(() => setLoading(false));
   }, [id, navigate]);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2500);
+  };
 
   if (loading) {
     return <div className="loading-screen"><div className="spinner" /><p>Loading results...</p></div>;
@@ -102,6 +109,13 @@ export default function QuizResult() {
         )}
         <button className="btn btn-secondary" onClick={() => navigate('/leaderboard')}>
           Leaderboard
+        </button>
+        <button
+          className="btn btn-ghost"
+          onClick={handleCopyLink}
+          style={{ borderColor: linkCopied ? 'var(--success)' : undefined, color: linkCopied ? 'var(--success)' : undefined }}
+        >
+          {linkCopied ? '✓ Link Copied!' : '🔗 Share Result'}
         </button>
       </div>
 

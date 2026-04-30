@@ -374,11 +374,14 @@ exports.getLeaderboard = async (req, res) => {
       return res.json({ success: true, leaderboard: [], disabled: true });
     }
 
-    const { limit = 20 } = req.query;
-    const leaderboard = await Attempt.find({ tenantId: req.tenantId })
+    const { limit = 20, quizCode } = req.query;
+    const filter = { tenantId: req.tenantId };
+    if (quizCode) filter.quizCode = quizCode.toUpperCase();
+
+    const leaderboard = await Attempt.find(filter)
       .sort({ percentage: -1, timeTaken: 1 })
       .limit(parseInt(limit))
-      .select('userName score totalQuestions percentage timeTaken submissionTime');
+      .select('userName score totalQuestions percentage timeTaken submissionTime quizCode');
 
     res.json({ success: true, leaderboard });
   } catch (error) {

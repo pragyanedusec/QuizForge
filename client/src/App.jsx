@@ -7,6 +7,7 @@ import UploadPDF from './pages/admin/UploadPDF';
 import ManageQuestions from './pages/admin/ManageQuestions';
 import CreateQuiz from './pages/admin/CreateQuiz';
 import QuizReports from './pages/admin/QuizReports';
+import TenantSettings from './pages/admin/TenantSettings';
 import StartQuiz from './pages/quiz/StartQuiz';
 import QuizAttempt from './pages/quiz/QuizAttempt';
 import QuizResult from './pages/quiz/QuizResult';
@@ -37,8 +38,9 @@ function AppContent() {
 
   const addToast = (message, type = 'success') => {
     const id = Date.now();
+    const duration = type === 'error' ? 6000 : type === 'warning' ? 5000 : 3000;
     setToasts(prev => [...prev, { id, message, type }]);
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 4000);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), duration);
   };
 
   const navLinks = (
@@ -59,6 +61,9 @@ function AppContent() {
           </NavLink>
           <NavLink to="/admin/reports" className={({ isActive }) => isActive ? 'active' : ''}>
             Reports
+          </NavLink>
+          <NavLink to="/admin/settings" className={({ isActive }) => isActive ? 'active' : ''}>
+            Settings
           </NavLink>
         </>
       )}
@@ -119,6 +124,7 @@ function AppContent() {
           <Route path="/admin/questions" element={<ProtectedRoute><ManageQuestions addToast={addToast} /></ProtectedRoute>} />
           <Route path="/admin/quizzes" element={<ProtectedRoute><CreateQuiz addToast={addToast} /></ProtectedRoute>} />
           <Route path="/admin/reports" element={<ProtectedRoute><QuizReports addToast={addToast} /></ProtectedRoute>} />
+          <Route path="/admin/settings" element={<ProtectedRoute><TenantSettings addToast={addToast} /></ProtectedRoute>} />
           <Route path="/quiz" element={<StartQuiz />} />
           <Route path="/quiz/attempt" element={<QuizAttempt addToast={addToast} />} />
           <Route path="/quiz/result/:id" element={<QuizResult />} />

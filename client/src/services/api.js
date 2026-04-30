@@ -76,15 +76,20 @@ export const startQuiz = (data) => api.post('/quiz/start', data);
 export const submitQuiz = (data) => api.post('/quiz/submit', data);
 export const getQuizSession = (id) => api.get(`/quiz/session/${id}`);
 export const getResult = (id) => api.get(`/quiz/result/${id}`);
-export const getLeaderboard = () => api.get('/quiz/leaderboard');
+export const getLeaderboard = (params) => api.get('/quiz/leaderboard', { params });
 export const joinQuizByCode = (code) => api.post('/quiz/join', { code });
 
 // Quiz Template APIs (Admin)
 export const createQuizTemplate = (data) => api.post('/admin/quiz-templates', data);
 export const listQuizTemplates = () => api.get('/admin/quiz-templates');
 export const toggleQuizTemplate = (id) => api.patch(`/admin/quiz-templates/${id}/toggle`);
+export const updateQuizTemplate = (id, data) => api.put(`/admin/quiz-templates/${id}`, data);
 export const deleteQuizTemplate = (id, mode = 'quiz-only') =>
   api.delete(`/admin/quiz-templates/${id}?mode=${mode}`);
+
+// Tenant Settings
+export const getTenantSettings = () => api.get('/admin/settings');
+export const updateTenantSettings = (settings) => api.put('/admin/settings', settings);
 
 // Quiz Reports (Admin)
 export const listQuizReports = () => api.get('/admin/reports/quizzes');

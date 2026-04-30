@@ -423,3 +423,59 @@ exports.getStats = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+/**
+ * Get tenant settings
+ * GET /admin/settings
+ */
+exports.getTenantSettings = async (req, res) => {
+  try {
+    res.json({ success: true, settings: req.tenant.settings, tenantId: req.tenantId });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * Update tenant settings
+ * PUT /admin/settings
+ */
+exports.updateTenantSettings = async (req, res) => {
+  try {
+    const Tenant = require('../models/Tenant');
+    const allowedKeys = [
+      'defaultTimePerQuestion',
+      'defaultQuestionCount',
+      'shuffleOptions',
+      'leaderboardEnabled',
+      'timerEnabled',
+      'showCorrectAnswers',
+      'allowRetake',
+      'gamificationEnabled',
+      'antiCheat',
+      'maxAttempts',
+    ];
+
+    const updates = {};
+    allowedKeys.forEach(key => {
+      if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+        updates[`settings.${key}`] = req.body[key];
+      }
+    });
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid settings provided' });
+    }
+
+    const tenant = await Tenant.findOneAndUpdate(
+      { tenantId: req.tenantId },
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
+    res.json({ success: true, settings: tenant.settings });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+

@@ -13,6 +13,7 @@ export default function QuizAttempt({ addToast }) {
   const [submitting, setSubmitting] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
   const [flashRed, setFlashRed] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   const timerRef = useRef(null);
   const submittedRef = useRef(false);
 
@@ -23,6 +24,19 @@ export default function QuizAttempt({ addToast }) {
   useEffect(() => {
     if (!quiz) navigate('/quiz');
   }, [quiz, navigate]);
+
+  // Warn before leaving page during active quiz
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (!submittedRef.current) {
+        e.preventDefault();
+        e.returnValue = 'Your quiz progress will be lost if you leave. Are you sure?';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // Reset per-question timer whenever current question changes
   useEffect(() => {
@@ -71,11 +85,12 @@ export default function QuizAttempt({ addToast }) {
     }
   }, [showWarning]);
 
-  // Submit quiz
+  // Submit quiz (actual submission)
   const handleSubmit = useCallback(async () => {
     if (submittedRef.current || submitting) return;
     submittedRef.current = true;
     setSubmitting(true);
+    setShowConfirmModal(false);
     clearInterval(timerRef.current);
 
     try {
@@ -98,10 +113,21 @@ export default function QuizAttempt({ addToast }) {
     }
   }, [quiz, answers, userName, navigate, addToast, submitting, questions]);
 
+  // Request confirmation before submitting
+  const requestSubmit = useCallback(() => {
+    const unanswered = questions.filter(q => !answers[q.questionId]).length;
+    if (unanswered > 0) {
+      setShowConfirmModal(true);
+    } else {
+      handleSubmit();
+    }
+  }, [questions, answers, handleSubmit]);
+
   if (!quiz) return null;
 
   const q = questions[current];
   const answered = Object.keys(answers).length;
+  const unanswered = questions.length - answered;
   const currentAnswered = !!answers[q?.questionId];
   const timerClass = questionTimeLeft <= 5 ? 'danger' : questionTimeLeft <= 10 ? 'warning' : '';
 
@@ -110,6 +136,31 @@ export default function QuizAttempt({ addToast }) {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+
+      {/* Submit Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="modal-overlay" onClick={() => setShowConfirmModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="modal-header">
+              <div className="modal-title">⚠️ Submit Quiz?</div>
+              <button className="btn btn-ghost btn-sm" onClick={() => setShowConfirmModal(false)}>✕</button>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '.95rem', marginBottom: '1.25rem' }}>
+              You have <strong style={{ color: 'var(--warning)' }}>{unanswered} unanswered</strong> question{unanswered !== 1 ? 's' : ''}.
+              Unanswered questions will be marked as incorrect.
+            </p>
+            <div style={{ display: 'flex', gap: '.75rem' }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setShowConfirmModal(false)}>
+                Go Back
+              </button>
+              <button className="btn btn-success" style={{ flex: 1 }} onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Submitting...' : 'Submit Anyway'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Fixed top bar */}
       <div style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
@@ -120,6 +171,9 @@ export default function QuizAttempt({ addToast }) {
         <div style={{ fontSize: '.85rem', color: 'var(--text-secondary)' }}>
           <strong style={{ color: 'var(--text-primary)' }}>QuizForge</strong>
           {' · '}Q{current + 1}/{questions.length} · {answered} answered
+          {unanswered > 0 && (
+            <span style={{ color: 'var(--warning)', marginLeft: '.5rem' }}>· {unanswered} skipped</span>
+          )}
         </div>
 
         {/* Per-question timer */}
@@ -150,7 +204,7 @@ export default function QuizAttempt({ addToast }) {
           <span style={{ fontSize: '.75rem', color: 'var(--text-muted)' }}>{timePerQuestion}s each</span>
         </div>
 
-        <button className="btn btn-success btn-sm" onClick={handleSubmit} disabled={submitting || !currentAnswered}>
+        <button className="btn btn-success btn-sm" onClick={requestSubmit} disabled={submitting}>
           {submitting ? 'Submitting...' : 'Submit Quiz'}
         </button>
       </div>
@@ -223,15 +277,17 @@ export default function QuizAttempt({ addToast }) {
           ))}
         </div>
 
-        {/* Prev / Next */}
+        {/* Prev / Next — Next is always enabled (skip allowed) */}
         <div className="quiz-nav">
           <button className="btn btn-secondary" disabled={current === 0}
             onClick={() => setCurrent(c => c - 1)}>← Previous</button>
           {current < questions.length - 1 ? (
-            <button className="btn btn-primary" disabled={!currentAnswered}
-              onClick={() => setCurrent(c => c + 1)}>Next →</button>
+            <button className="btn btn-primary"
+              onClick={() => setCurrent(c => c + 1)}>
+              {currentAnswered ? 'Next →' : 'Skip →'}
+            </button>
           ) : (
-            <button className="btn btn-success" onClick={handleSubmit} disabled={submitting || !currentAnswered}>
+            <button className="btn btn-success" onClick={requestSubmit} disabled={submitting}>
               {submitting ? 'Submitting...' : 'Submit Quiz'}
             </button>
           )}

@@ -107,6 +107,35 @@ exports.toggleTemplate = async (req, res) => {
 };
 
 /**
+ * Update quiz template (Admin)
+ * PUT /admin/quiz-templates/:id
+ */
+exports.updateTemplate = async (req, res) => {
+  try {
+    const template = await QuizTemplate.findOne({ _id: req.params.id, tenantId: req.tenantId });
+    if (!template) return res.status(404).json({ success: false, error: 'Template not found' });
+
+    const { title, questionCount, timePerQuestion, difficulty, category, maxAttempts, startsAt, endsAt } = req.body;
+
+    if (title !== undefined) template.title = title.trim();
+    if (questionCount !== undefined) template.questionCount = parseInt(questionCount);
+    if (timePerQuestion !== undefined) template.timePerQuestion = parseInt(timePerQuestion);
+    if (difficulty !== undefined) template.difficulty = difficulty;
+    if (category !== undefined) template.category = category;
+    if (maxAttempts !== undefined) template.maxAttempts = parseInt(maxAttempts);
+    template.startsAt = startsAt || null;
+    template.endsAt = endsAt || null;
+
+    await template.save();
+
+    res.json({ success: true, template });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+
+/**
  * Delete quiz template (Admin)
  * DELETE /admin/quiz-templates/:id?mode=quiz-only|full
  *   mode=quiz-only  → deletes only this template + its quiz sessions + attempts for this quiz

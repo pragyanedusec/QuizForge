@@ -24,37 +24,116 @@ function LeaderboardSkeleton() {
 export default function Leaderboard() {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [quizCodeInput, setQuizCodeInput] = useState('');
+  const [filteredCode, setFilteredCode] = useState('');
+  const [error, setError] = useState('');
+
+  const fetchLeaderboard = async (code = '') => {
+    setLoading(true);
+    setError('');
+    try {
+      const params = code ? { quizCode: code.toUpperCase() } : {};
+      const res = await getLeaderboard(params);
+      if (res.data.disabled) {
+        setEntries([]);
+        setError('Leaderboard is disabled for this quiz.');
+      } else {
+        setEntries(res.data.leaderboard);
+        if (code && res.data.leaderboard.length === 0) {
+          setError(`No attempts found for quiz code "${code.toUpperCase()}".`);
+        }
+      }
+    } catch {
+      setError('Failed to load leaderboard.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getLeaderboard()
-      .then(res => setEntries(res.data.leaderboard))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    fetchLeaderboard();
   }, []);
+
+  const handleFilter = (e) => {
+    e.preventDefault();
+    const code = quizCodeInput.trim();
+    setFilteredCode(code);
+    fetchLeaderboard(code);
+  };
+
+  const handleClear = () => {
+    setQuizCodeInput('');
+    setFilteredCode('');
+    fetchLeaderboard('');
+  };
 
   if (loading) return <LeaderboardSkeleton />;
 
   return (
     <div className="fade-in" style={{ maxWidth: '700px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
         <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>🏆 Leaderboard</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Top performers across all quizzes</p>
+        <p style={{ color: 'var(--text-muted)' }}>
+          {filteredCode
+            ? `Results for quiz "${filteredCode}"`
+            : 'Top performers across all quizzes'}
+        </p>
       </div>
 
-      {entries.length === 0 ? (
+      {/* Quiz code filter */}
+      <div className="card" style={{ marginBottom: '1.5rem', padding: '1rem 1.25rem' }}>
+        <form onSubmit={handleFilter} style={{ display: 'flex', gap: '.75rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div className="form-group" style={{ flex: 1, minWidth: '160px', marginBottom: 0 }}>
+            <label className="form-label">Filter by Quiz Code</label>
+            <input
+              className="input"
+              placeholder="Enter quiz code (e.g. ABC123)"
+              value={quizCodeInput}
+              onChange={e => setQuizCodeInput(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''))}
+              maxLength={6}
+              style={{ fontFamily: 'monospace', letterSpacing: '.08em', textTransform: 'uppercase' }}
+            />
+          </div>
+          <button className="btn btn-primary btn-sm" type="submit" disabled={!quizCodeInput.trim()}>
+            Filter
+          </button>
+          {filteredCode && (
+            <button className="btn btn-ghost btn-sm" type="button" onClick={handleClear}>
+              ✕ Show All
+            </button>
+          )}
+        </form>
+      </div>
+
+      {error ? (
+        <div className="empty-state">
+          <div className="icon">🔍</div>
+          <p>{error}</p>
+        </div>
+      ) : entries.length === 0 ? (
         <div className="empty-state">
           <div className="icon">🏅</div>
           <p>No attempts yet. Be the first to take a quiz!</p>
+          <a href="/quiz" className="btn btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
+            Take a Quiz →
+          </a>
         </div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           {entries.map((e, i) => (
             <div key={e._id} className="leaderboard-item">
               <div className={`leaderboard-rank ${i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : ''}`}>
-                {i + 1}
+                {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
               </div>
-              <div className="leaderboard-name">{e.userName}</div>
-              <div style={{ fontSize: '.8rem', color: 'var(--text-muted)' }}>
+              <div style={{ flex: 1 }}>
+                <div className="leaderboard-name">{e.userName}</div>
+                {e.quizCode && (
+                  <div style={{ fontSize: '.72rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                    {e.quizCode}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: '.8rem', color: 'var(--text-muted)', minWidth: '50px', textAlign: 'center' }}>
                 {e.score}/{e.totalQuestions}
               </div>
               <div className="leaderboard-score">{e.percentage}%</div>

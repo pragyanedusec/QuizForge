@@ -48,6 +48,7 @@ router.get('/stats', adminController.getStats);
 const templateController = require('../controllers/templateController');
 router.get('/quiz-templates', templateController.listTemplates);
 router.post('/quiz-templates', templateController.createTemplate);
+router.put('/quiz-templates/:id', templateController.updateTemplate);
 router.patch('/quiz-templates/:id/toggle', templateController.toggleTemplate);
 router.delete('/quiz-templates/:id', templateController.deleteTemplate);
 
@@ -55,5 +56,9 @@ router.delete('/quiz-templates/:id', templateController.deleteTemplate);
 const reportController = require('../controllers/reportController');
 router.get('/reports/quizzes', reportController.listQuizReports);
 router.get('/reports/quizzes/:code', reportController.getQuizReport);
+
+// Tenant Settings
+router.get('/settings', adminController.getTenantSettings);
+router.put('/settings', adminController.updateTenantSettings);
 
 module.exports = router;
