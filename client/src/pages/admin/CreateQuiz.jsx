@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createQuizTemplate, listQuizTemplates, toggleQuizTemplate, deleteQuizTemplate, getQuestions, updateQuizTemplate } from '../../services/api';
+import QRCodeModal from '../../components/QRCodeModal';
 
 function DeleteModal({ template, onClose, onConfirm, deleting }) {
   return (
@@ -178,6 +179,7 @@ export default function CreateQuiz({ addToast }) {
   const [deleteModal, setDeleteModal] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState(null); // { id, form }
+  const [qrModal, setQrModal] = useState(null); // { title, code }
 
   useEffect(() => {
     fetchData();
@@ -382,6 +384,9 @@ export default function CreateQuiz({ addToast }) {
               </div>
 
               <div style={{ display: 'flex', gap: '.5rem', marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '.75rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-ghost btn-sm" onClick={() => setQrModal({ title: t.title, code: t.code })}>
+                  📱 QR Code
+                </button>
                 <button className="btn btn-ghost btn-sm" onClick={() => handleToggle(t._id)}>
                   {t.isActive ? '⏸ Pause' : '▶ Resume'}
                 </button>
@@ -396,6 +401,14 @@ export default function CreateQuiz({ addToast }) {
             </div>
           ))}
         </div>
+      )}
+
+      {qrModal && (
+        <QRCodeModal
+          quizTitle={qrModal.title}
+          quizCode={qrModal.code}
+          onClose={() => setQrModal(null)}
+        />
       )}
     </div>
   );

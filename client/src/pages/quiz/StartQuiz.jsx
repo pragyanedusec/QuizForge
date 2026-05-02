@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { joinQuizByCode, startQuiz } from '../../services/api';
 
 function OtpInput({ length = 6, value, onChange }) {
@@ -51,6 +51,7 @@ function OtpInput({ length = 6, value, onChange }) {
 
 export default function StartQuiz() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState('code');
   const [code, setCode] = useState('');
   const [userName, setUserName] = useState('');
@@ -58,6 +59,30 @@ export default function StartQuiz() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [starting, setStarting] = useState(false);
+  const autoJoinAttempted = useRef(false);
+
+  // Auto-join if ?code= is in the URL (from QR scan)
+  useEffect(() => {
+    const urlCode = searchParams.get('code');
+    if (urlCode && !autoJoinAttempted.current) {
+      autoJoinAttempted.current = true;
+      const cleaned = urlCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (cleaned.length >= 4) {
+        setCode(cleaned);
+        // Auto-join after a brief delay so the UI renders first
+        setLoading(true);
+        joinQuizByCode(cleaned)
+          .then(res => {
+            setQuizInfo(res.data.quiz);
+            setStep('name');
+          })
+          .catch(err => {
+            setError(err.response?.data?.error || 'Invalid quiz code from QR. Please enter manually.');
+          })
+          .finally(() => setLoading(false));
+      }
+    }
+  }, [searchParams]);
 
   const handleJoin = async (e) => {
     e?.preventDefault();
