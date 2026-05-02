@@ -277,17 +277,15 @@ export default function QuizAttempt({ addToast }) {
           ))}
         </div>
 
-        {/* Prev / Next — Next is always enabled (skip allowed) */}
-        <div className="quiz-nav">
-          <button className="btn btn-secondary" disabled={current === 0}
-            onClick={() => setCurrent(c => c - 1)}>← Previous</button>
+        {/* Next / Submit — disabled until student selects an answer */}
+        <div className="quiz-nav" style={{ justifyContent: 'center' }}>
           {current < questions.length - 1 ? (
-            <button className="btn btn-primary"
+            <button className="btn btn-primary" disabled={!currentAnswered}
               onClick={() => setCurrent(c => c + 1)}>
-              {currentAnswered ? 'Next →' : 'Skip →'}
+              Next →
             </button>
           ) : (
-            <button className="btn btn-success" onClick={requestSubmit} disabled={submitting}>
+            <button className="btn btn-success" onClick={requestSubmit} disabled={!currentAnswered || submitting}>
               {submitting ? 'Submitting...' : 'Submit Quiz'}
             </button>
           )}
