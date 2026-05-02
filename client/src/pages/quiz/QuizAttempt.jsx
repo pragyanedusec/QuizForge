@@ -43,69 +43,6 @@ export default function QuizAttempt({ addToast }) {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, []);
 
-  // Reset per-question timer whenever current question changes
-  useEffect(() => {
-    setQuestionTimeLeft(timePerQuestion);
-    setShowWarning(false);
-    setFlashRed(false);
-
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    timerRef.current = setInterval(() => {
-      setQuestionTimeLeft(prev => {
-        if (prev <= 6 && prev > 5) setShowWarning(true);
-        if (prev <= 1) {
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerRef.current);
-  }, [current, timePerQuestion]);
-
-  // Auto-advance when per-question timer hits 0
-  useEffect(() => {
-    if (questionTimeLeft === 0) {
-      clearInterval(timerRef.current);
-      setFlashRed(true);
-
-      // Brief flash then advance
-      setTimeout(() => {
-        if (current < questions.length - 1) {
-          setCurrent(c => c + 1);
-        } else {
-          // Last question — auto-submit
-          handleSubmit();
-        }
-      }, 800);
-    }
-  }, [questionTimeLeft, current, questions.length]);
-
-  // Overall session timer
-  useEffect(() => {
-    if (!quiz?.expiresAt) return;
-    const int = setInterval(() => {
-      setTotalTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(int);
-          if (!submittedRef.current) handleSubmit();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(int);
-  }, [quiz?.expiresAt, handleSubmit]);
-
-  // Dismiss warning
-  useEffect(() => {
-    if (showWarning) {
-      const t = setTimeout(() => setShowWarning(false), 3000);
-      return () => clearTimeout(t);
-    }
-  }, [showWarning]);
-
   // Submit quiz (actual submission)
   const handleSubmit = useCallback(async () => {
     if (submittedRef.current || submitting) return;
@@ -143,6 +80,69 @@ export default function QuizAttempt({ addToast }) {
       handleSubmit();
     }
   }, [questions, answers, handleSubmit]);
+
+  // Reset per-question timer whenever current question changes
+  useEffect(() => {
+    setQuestionTimeLeft(timePerQuestion);
+    setShowWarning(false);
+    setFlashRed(false);
+
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    timerRef.current = setInterval(() => {
+      setQuestionTimeLeft(prev => {
+        if (prev <= 6 && prev > 5) setShowWarning(true);
+        if (prev <= 1) {
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [current, timePerQuestion]);
+
+  // Auto-advance when per-question timer hits 0
+  useEffect(() => {
+    if (questionTimeLeft === 0) {
+      clearInterval(timerRef.current);
+      setFlashRed(true);
+
+      // Brief flash then advance
+      setTimeout(() => {
+        if (current < questions.length - 1) {
+          setCurrent(c => c + 1);
+        } else {
+          // Last question — auto-submit
+          handleSubmit();
+        }
+      }, 800);
+    }
+  }, [questionTimeLeft, current, questions.length, handleSubmit]);
+
+  // Overall session timer
+  useEffect(() => {
+    if (!quiz?.expiresAt) return;
+    const int = setInterval(() => {
+      setTotalTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(int);
+          if (!submittedRef.current) handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(int);
+  }, [quiz?.expiresAt, handleSubmit]);
+
+  // Dismiss warning
+  useEffect(() => {
+    if (showWarning) {
+      const t = setTimeout(() => setShowWarning(false), 3000);
+      return () => clearTimeout(t);
+    }
+  }, [showWarning]);
 
   if (!quiz) return null;
 
