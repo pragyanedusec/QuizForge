@@ -83,6 +83,21 @@ function QuizForm({ initial = DEFAULT_FORM, categories, onSubmit, onCancel, subm
 
   const totalMin = Math.ceil(form.questionCount * form.timePerQuestion / 60);
 
+  useEffect(() => {
+    if (form.startsAt) {
+      const start = new Date(form.startsAt);
+      if (!isNaN(start.getTime())) {
+        const end = new Date(start.getTime() + totalMin * 60000);
+        const pad = n => n.toString().padStart(2, '0');
+        const endStr = `${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        
+        if (form.endsAt !== endStr) {
+          setForm(f => ({ ...f, endsAt: endStr }));
+        }
+      }
+    }
+  }, [form.startsAt, form.questionCount, form.timePerQuestion]);
+
   return (
     <form onSubmit={e => { e.preventDefault(); onSubmit(form); }}>
       <div className="form-group" style={{ marginBottom: '1rem' }}>

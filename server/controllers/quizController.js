@@ -164,8 +164,19 @@ exports.startQuiz = async (req, res) => {
     // Per-question timing — total = timePerQuestion × questionCount
     const now = new Date();
     const timePerQ = resolvedTimePerQuestion;
-    const totalTimeLimit = timePerQ * questionCount;
-    const expiresAt = new Date(now.getTime() + totalTimeLimit * 1000);
+    let totalTimeLimit = timePerQ * questionCount;
+    let expiresAt = new Date(now.getTime() + totalTimeLimit * 1000);
+
+    // ── Absolute deadline enforcement ──
+    // If the template has an absolute endsAt, the quiz MUST end at that exact time at any cost.
+    if (template?.endsAt) {
+      const templateEnd = new Date(template.endsAt);
+      if (expiresAt > templateEnd) {
+        expiresAt = templateEnd;
+        // Adjust the time limit so the frontend countdown timer matches the strict deadline
+        totalTimeLimit = Math.max(1, Math.floor((templateEnd.getTime() - now.getTime()) / 1000));
+      }
+    }
 
     // ── Anti-cheat: expire any previous in-progress session for this user+code ──
     // Only enforced when tenant has antiCheat enabled (default: true)
