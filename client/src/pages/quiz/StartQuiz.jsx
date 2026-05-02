@@ -52,7 +52,8 @@ function OtpInput({ length = 6, value, onChange }) {
 export default function StartQuiz() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [step, setStep] = useState('code');
+  const hasUrlCode = !!searchParams.get('code');
+  const [step, setStep] = useState(hasUrlCode ? 'loading' : 'code');
   const [code, setCode] = useState('');
   const [userName, setUserName] = useState('');
   const [quizInfo, setQuizInfo] = useState(null);
@@ -69,8 +70,6 @@ export default function StartQuiz() {
       const cleaned = urlCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
       if (cleaned.length >= 4) {
         setCode(cleaned);
-        // Auto-join after a brief delay so the UI renders first
-        setLoading(true);
         joinQuizByCode(cleaned)
           .then(res => {
             setQuizInfo(res.data.quiz);
@@ -78,8 +77,10 @@ export default function StartQuiz() {
           })
           .catch(err => {
             setError(err.response?.data?.error || 'Invalid quiz code from QR. Please enter manually.');
-          })
-          .finally(() => setLoading(false));
+            setStep('code');
+          });
+      } else {
+        setStep('code');
       }
     }
   }, [searchParams]);
@@ -133,6 +134,17 @@ export default function StartQuiz() {
   };
 
   const totalTime = quizInfo ? Math.ceil(quizInfo.questionCount * quizInfo.timePerQuestion / 60) : 0;
+
+  // Show spinner while auto-joining via QR code
+  if (step === 'loading') {
+    return (
+      <div className="start-hero fade-in" style={{ textAlign: 'center' }}>
+        <div className="spinner" style={{ margin: '0 auto 1.5rem', width: '3rem', height: '3rem' }} />
+        <h2 style={{ fontWeight: 700 }}>Joining quiz...</h2>
+        <p style={{ color: 'var(--text-muted)' }}>Please wait while we load your quiz</p>
+      </div>
+    );
+  }
 
   return (
     <div className="start-hero fade-in">
