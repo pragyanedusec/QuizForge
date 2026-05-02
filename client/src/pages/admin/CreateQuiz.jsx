@@ -155,8 +155,8 @@ function QuizForm({ initial = DEFAULT_FORM, categories, onSubmit, onCancel, subm
 
       <div style={{ padding: '.75rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', fontSize: '.85rem', color: 'var(--text-secondary)' }}>
         📋 {form.questionCount} questions · ⏱ {form.timePerQuestion}s each · ⏳ {totalMin} min total
-        {form.startsAt && <> · 📅 Opens {new Date(form.startsAt).toLocaleString()}</>}
-        {form.endsAt && <> · ⛔ Closes {new Date(form.endsAt).toLocaleString()}</>}
+        {form.startsAt && <> · 📅 Opens {new Date(form.startsAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</>}
+        {form.endsAt && <> · ⛔ Closes {new Date(form.endsAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</>}
       </div>
 
       <div style={{ display: 'flex', gap: '.5rem' }}>
@@ -202,8 +202,8 @@ export default function CreateQuiz({ addToast }) {
     try {
       const payload = {
         ...form,
-        startsAt: form.startsAt || null,
-        endsAt: form.endsAt || null,
+        startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null,
+        endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null,
       };
       const res = await createQuizTemplate(payload);
       const created = { ...res.data.template, _id: res.data.template._id || res.data.template.id, createdAt: new Date() };
@@ -220,7 +220,11 @@ export default function CreateQuiz({ addToast }) {
     if (!editingTemplate) return;
     setSubmitting(true);
     try {
-      const payload = { ...form, startsAt: form.startsAt || null, endsAt: form.endsAt || null };
+      const payload = { 
+        ...form, 
+        startsAt: form.startsAt ? new Date(form.startsAt).toISOString() : null, 
+        endsAt: form.endsAt ? new Date(form.endsAt).toISOString() : null 
+      };
       const res = await updateQuizTemplate(editingTemplate.id, payload);
       setTemplates(prev => prev.map(t => t._id === editingTemplate.id ? { ...t, ...res.data.template } : t));
       setEditingTemplate(null);
@@ -229,6 +233,13 @@ export default function CreateQuiz({ addToast }) {
       addToast?.(err.response?.data?.error || 'Failed to update quiz', 'error');
     }
     setSubmitting(false);
+  };
+
+  const toLocalString = (isoString) => {
+    if (!isoString) return '';
+    const d = new Date(isoString);
+    const pad = n => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   const startEdit = (t) => {
@@ -241,8 +252,8 @@ export default function CreateQuiz({ addToast }) {
         difficulty: t.difficulty,
         category: t.category,
         maxAttempts: t.maxAttempts,
-        startsAt: t.startsAt ? new Date(t.startsAt).toISOString().slice(0, 16) : '',
-        endsAt: t.endsAt ? new Date(t.endsAt).toISOString().slice(0, 16) : '',
+        startsAt: toLocalString(t.startsAt),
+        endsAt: toLocalString(t.endsAt),
       }
     });
     setShowForm(false);
@@ -360,8 +371,8 @@ export default function CreateQuiz({ addToast }) {
                     <span>🎯 {t.difficulty}</span>
                     <span>🔄 {t.maxAttempts === 0 ? '∞' : t.maxAttempts} attempts</span>
                     <span>👥 {t.totalAttempts || 0} taken</span>
-                    {t.startsAt && <span>📅 Opens {new Date(t.startsAt).toLocaleDateString()}</span>}
-                    {t.endsAt && <span>⛔ Closes {new Date(t.endsAt).toLocaleDateString()}</span>}
+                    {t.startsAt && <span>📅 Opens {new Date(t.startsAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</span>}
+                    {t.endsAt && <span>⛔ Closes {new Date(t.endsAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })}</span>}
                   </div>
                 </div>
 
