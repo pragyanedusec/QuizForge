@@ -36,6 +36,7 @@ export default function UploadPDF({ addToast }) {
   const [extracted, setExtracted] = useState(null);
   const [saving, setSaving]       = useState(false);
   const [filter, setFilter]       = useState('all'); // all | review | ok
+  const [bulkCategory, setBulkCategory] = useState('');
   const fileRef  = useRef();
   const pollRef  = useRef();
   const navigate = useNavigate();
@@ -124,6 +125,12 @@ export default function UploadPDF({ addToast }) {
 
   const removeQuestion = (idx) => {
     setExtracted(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const applyBulkCategory = () => {
+    if (!bulkCategory.trim()) return;
+    setExtracted(prev => prev.map(q => ({ ...q, category: bulkCategory.trim() })));
+    addToast(`Applied category "${bulkCategory.trim()}" to all questions`, 'success');
   };
 
   // Guard: cannot save if any question has no correct answer
@@ -275,7 +282,25 @@ export default function UploadPDF({ addToast }) {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              {/* Bulk Category */}
+              <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', background: 'var(--bg-card)', padding: '.25rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                <input 
+                  className="input" 
+                  placeholder="Bulk set category (e.g. p-cycle)" 
+                  value={bulkCategory}
+                  onChange={e => setBulkCategory(e.target.value)}
+                  style={{ width: '200px', fontSize: '.8rem', padding: '.4rem .75rem' }}
+                />
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  onClick={applyBulkCategory}
+                  disabled={!bulkCategory.trim()}
+                >
+                  Apply to All
+                </button>
+              </div>
+
               {/* Filter tabs */}
               <div style={{ display: 'flex', gap: '.25rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-sm)', padding: '.2rem' }}>
                 {[['all', 'All'], ['review', '⚠ Needs Review'], ['ok', '✓ Good']].map(([val, label]) => (
