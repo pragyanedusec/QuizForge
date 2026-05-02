@@ -112,6 +112,11 @@ export default function StartQuiz() {
       setError('Please enter your name');
       return;
     }
+    // Client-side deadline check
+    if (quizInfo?.endsAt && new Date() > new Date(quizInfo.endsAt)) {
+      setError('This quiz has ended. You can no longer start it.');
+      return;
+    }
     setStarting(true);
     setError('');
     try {
@@ -134,6 +139,7 @@ export default function StartQuiz() {
   };
 
   const totalTime = quizInfo ? Math.ceil(quizInfo.questionCount * quizInfo.timePerQuestion / 60) : 0;
+  const isExpired = quizInfo?.endsAt ? new Date() > new Date(quizInfo.endsAt) : false;
 
   // Show spinner while auto-joining via QR code
   if (step === 'loading') {
@@ -198,32 +204,55 @@ export default function StartQuiz() {
               </div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-              <label className="form-label">Your Full Name</label>
-              <input
-                className="input"
-                placeholder="Enter your name..."
-                value={userName}
-                onChange={e => setUserName(e.target.value)}
-                autoFocus
-              />
-            </div>
-
-            {error && (
-              <div style={{ padding: '.75rem', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', color: 'var(--danger)', fontSize: '.85rem', marginBottom: '1rem' }}>
-                {error}
+            {isExpired ? (
+              <div style={{
+                padding: '1.5rem', textAlign: 'center',
+                background: 'rgba(239,68,68,.08)', border: '1px solid var(--danger)',
+                borderRadius: 'var(--radius-sm)', marginBottom: '1rem',
+              }}>
+                <p style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🚫</p>
+                <p style={{ color: 'var(--danger)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '.25rem' }}>
+                  This quiz has ended
+                </p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '.85rem' }}>
+                  The quiz closed at {new Date(quizInfo.endsAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST.
+                  You can no longer participate.
+                </p>
+                <button className="btn btn-secondary" style={{ marginTop: '1rem' }}
+                  onClick={() => { setStep('code'); setError(''); setQuizInfo(null); }}>
+                  ← Try Another Code
+                </button>
               </div>
-            )}
+            ) : (
+              <>
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label className="form-label">Your Full Name</label>
+                  <input
+                    className="input"
+                    placeholder="Enter your name..."
+                    value={userName}
+                    onChange={e => setUserName(e.target.value)}
+                    autoFocus
+                  />
+                </div>
 
-            <div style={{ display: 'flex', gap: '.75rem' }}>
-              <button className="btn btn-secondary" onClick={() => { setStep('code'); setError(''); }}>
-                ← Back
-              </button>
-              <button className="btn btn-primary btn-lg" style={{ flex: 1 }}
-                onClick={handleStart} disabled={starting}>
-                {starting ? 'Starting Quiz...' : 'Start Quiz →'}
-              </button>
-            </div>
+                {error && (
+                  <div style={{ padding: '.75rem', background: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', color: 'var(--danger)', fontSize: '.85rem', marginBottom: '1rem' }}>
+                    {error}
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', gap: '.75rem' }}>
+                  <button className="btn btn-secondary" onClick={() => { setStep('code'); setError(''); }}>
+                    ← Back
+                  </button>
+                  <button className="btn btn-primary btn-lg" style={{ flex: 1 }}
+                    onClick={handleStart} disabled={starting}>
+                    {starting ? 'Starting Quiz...' : 'Start Quiz →'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

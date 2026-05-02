@@ -20,6 +20,11 @@ export default function QuizAttempt({ addToast }) {
   const timePerQuestion = quiz?.timePerQuestion || 30;
   const questions = quiz?.questions || [];
 
+  const [totalTimeLeft, setTotalTimeLeft] = useState(() => {
+    if (!quiz?.expiresAt) return 0;
+    return Math.max(0, Math.floor((new Date(quiz.expiresAt).getTime() - Date.now()) / 1000));
+  });
+
   // Redirect if no quiz data
   useEffect(() => {
     if (!quiz) navigate('/quiz');
@@ -76,6 +81,22 @@ export default function QuizAttempt({ addToast }) {
       }, 800);
     }
   }, [questionTimeLeft, current, questions.length]);
+
+  // Overall session timer
+  useEffect(() => {
+    if (!quiz?.expiresAt) return;
+    const int = setInterval(() => {
+      setTotalTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(int);
+          if (!submittedRef.current) handleSubmit();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(int);
+  }, [quiz?.expiresAt, handleSubmit]);
 
   // Dismiss warning
   useEffect(() => {
@@ -176,8 +197,21 @@ export default function QuizAttempt({ addToast }) {
           )}
         </div>
 
-        {/* Per-question timer */}
-        <div className="quiz-top-center" style={{ display: 'flex', alignItems: 'center', gap: '.75rem' }}>
+        {/* Timers */}
+        <div className="quiz-top-center" style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+          
+          {/* Overall Timer */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.2 }}>
+            <span style={{ fontSize: '.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Total Time</span>
+            <span style={{ 
+              fontSize: '1.1rem', fontWeight: 800, fontFamily: 'monospace',
+              color: totalTimeLeft <= 60 ? '#ef4444' : totalTimeLeft <= 180 ? '#f59e0b' : 'var(--text-primary)'
+            }}>
+              {Math.floor(totalTimeLeft / 60)}:{String(totalTimeLeft % 60).padStart(2, '0')}
+            </span>
+          </div>
+
+          {/* Per-question timer */}
           <div style={{
             position: 'relative', width: '44px', height: '44px',
           }}>

@@ -236,6 +236,8 @@ exports.joinByCode = async (req, res) => {
         maxAttempts: template.maxAttempts,
         totalAttempts: template.totalAttempts || 0,
         tenantId: template.tenantId,
+        startsAt: template.startsAt || null,
+        endsAt: template.endsAt || null,
       },
     });
   } catch (error) {

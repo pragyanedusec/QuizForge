@@ -155,16 +155,11 @@ function QuizForm({ initial = DEFAULT_FORM, categories, onSubmit, onCancel, subm
       </div>
 
       {/* Scheduling */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '.75rem', marginBottom: '1rem' }}>
-        <div className="form-group">
+      <div style={{ marginBottom: '1rem' }}>
+        <div className="form-group" style={{ maxWidth: '300px' }}>
           <label className="form-label">Starts At <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
           <input className="input" type="datetime-local"
             value={form.startsAt} onChange={e => setForm(f => ({ ...f, startsAt: e.target.value }))} />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Ends At <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(optional)</span></label>
-          <input className="input" type="datetime-local"
-            value={form.endsAt} onChange={e => setForm(f => ({ ...f, endsAt: e.target.value }))} />
         </div>
       </div>
 
