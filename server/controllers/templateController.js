@@ -218,7 +218,7 @@ exports.joinByCode = async (req, res) => {
     // Check schedule
     const now = new Date();
     if (template.startsAt && now < template.startsAt) {
-      return res.status(400).json({ success: false, error: `This quiz hasn't started yet. It starts at ${template.startsAt.toLocaleString()}` });
+      return res.status(400).json({ success: false, error: `This quiz hasn't started yet. It opens at ${template.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST` });
     }
     if (template.endsAt && now > template.endsAt) {
       return res.status(400).json({ success: false, error: 'This quiz has ended' });

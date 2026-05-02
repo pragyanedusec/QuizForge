@@ -92,7 +92,7 @@ exports.startQuiz = async (req, res) => {
       if (template.startsAt && now < template.startsAt) {
         return res.status(400).json({
           success: false,
-          error: `This quiz has not started yet. It starts at ${template.startsAt.toLocaleString()}.`,
+          error: `This quiz has not started yet. It opens at ${template.startsAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'medium', timeStyle: 'short' })} IST.`,
         });
       }
 
