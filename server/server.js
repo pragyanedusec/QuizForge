@@ -44,32 +44,35 @@ if (!fs.existsSync(uploadsDir)) {
 app.use(helmet({ crossOriginResourcePolicy: false }));
 
 // ── Rate limiting ──────────────────────────────────────────────────────────
-// Global safety net
+// Global safety net — keyed by API key so shared IPs (classrooms) don't share bucket
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 1000,
+  keyGenerator: (req) => req.headers['x-api-key'] || ipKeyGenerator(req),
+  skip: (req) => req.method === 'OPTIONS', // never rate-limit preflight
   message: { success: false, error: 'Too many requests, please try again later' },
 });
-app.use('/api/', globalLimiter);
 
 // Tighter limit for quiz start — prevents session spam
 const quizStartLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
-  keyGenerator: (req) => `${ipKeyGenerator(req)}:${req.headers['x-api-key'] || ''}`,
+  max: 50,
+  keyGenerator: (req) => req.headers['x-api-key'] || ipKeyGenerator(req),
+  skip: (req) => req.method === 'OPTIONS',
   message: { success: false, error: 'Too many quiz attempts. Please wait before trying again.' },
   skipSuccessfulRequests: false,
 });
 
-// Join by code — moderate limit
+// Join by code — generous limit for classroom use
 const quizJoinLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 30,
-  keyGenerator: (req) => `${ipKeyGenerator(req)}:${req.headers['x-api-key'] || ''}`,
+  max: 200,
+  keyGenerator: (req) => req.headers['x-api-key'] || ipKeyGenerator(req),
+  skip: (req) => req.method === 'OPTIONS',
   message: { success: false, error: 'Too many join attempts. Please slow down.' },
 });
 
-// ── CORS ───────────────────────────────────────────────────────────────────
+// ── CORS — must be before rate limiters so blocked requests still get CORS headers ──
 const allowedOrigins = [
   process.env.CORS_ORIGIN,          // exact override from Railway variable
   'http://localhost:5173',           // local Vite dev server
@@ -88,6 +91,9 @@ app.use(cors({
   },
   credentials: true,
 }));
+
+// Apply global rate limiter after CORS
+app.use('/api/', globalLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
