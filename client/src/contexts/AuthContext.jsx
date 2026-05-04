@@ -3,11 +3,20 @@ import { authMe } from '../services/api';
 
 const AuthContext = createContext(null);
 
+// Safe JSON.parse — returns null if value is missing, "undefined", or malformed
+function safeParse(key) {
+  try {
+    const val = localStorage.getItem(key);
+    if (!val || val === 'undefined' || val === 'null') return null;
+    return JSON.parse(val);
+  } catch {
+    localStorage.removeItem(key); // wipe corrupted data
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [admin, setAdmin] = useState(() => {
-    const saved = localStorage.getItem('qf_admin');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [admin, setAdmin] = useState(() => safeParse('qf_admin'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
